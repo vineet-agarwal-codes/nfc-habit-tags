@@ -33,6 +33,23 @@
 4. Author updates a recipe and removes or narrows a param the user had set → user value dropped or clamped, never out of range (Task 4 table cases).
 5. Tap at a time window boundary or across midnight (`22:00-06:00` at 23:59, 00:00, 05:59, 06:00) → correct rule chosen (Task 2 table cases).
 
+## Testing Approach (autonomous build → test → fix)
+
+This VM is arm64, 1 core, no KVM, so no local emulator. The loop runs on GitHub Actions (x86 runners with KVM):
+
+- **`:core` unit tests** run locally and in CI (fast loop).
+- **Emulator job** (`reactivecircus/android-emulator-runner@v2`, API 34 x86_64 Google APIs image, AVD cached): installs the debug APK, grants permissions with adb (`appops set com.habittags.app GET_USAGE_STATS allow`, `appops set com.habittags.app SYSTEM_ALERT_WINDOW allow`, `cmd notification allow_dnd com.habittags.app`, `pm grant com.habittags.app android.permission.POST_NOTIFICATIONS`), then runs (a) instrumented tests (`connectedDebugAndroidTest`) and (b) **Maestro** YAML flows from `android/maestro/`. Screenshots, logcat and Maestro reports are uploaded as artifact `e2e-report`; the agent reads them with `gh run download` to diagnose failures.
+- **NFC is simulated, never mocked inside production code paths:**
+  - All tap handling goes through `TapHandler.handle(context, tagId: String)`; `TapActivity` only extracts the tagId from the NDEF intent and calls it.
+  - Instrumented test `TapActivityTest` launches `TapActivity` with a real `NdefMessage` (built with `TagPayload`) in `NfcAdapter.EXTRA_NDEF_MESSAGES` and action `NDEF_DISCOVERED`, so the real parsing path is covered.
+  - Debug build only (`src/debug/`): exported `DebugTapReceiver` handling `adb shell am broadcast -a com.habittags.app.DEBUG_TAP --es tagId <id>` → `TapHandler.handle`; and `FakeTagIo` replacing the reader-mode write so "Hold your phone to a blank tag" succeeds after 1 s with a new tagId. Release builds contain neither.
+  - Tag writing sits behind `interface TagIo { suspend fun awaitWrite(tagId: String): WriteResult; suspend fun awaitRead(): String? }` with `NfcTagIo` (release + debug default) and `FakeTagIo` (selected when the debug-only intent extra / build flag `USE_FAKE_NFC` is set by the e2e job).
+- **Blocking on the emulator:** the e2e flows put `com.android.settings` into the `social` group via the group editor, start a mode, open Settings, and assert the overlay text is visible; end the mode and assert Settings is usable.
+- **Gate in e2e:** debug-only setting `gateWordsOverride` = 5 so flows stay fast; Espresso `typeText` (char by char) covers acceptance and a single bulk `replaceText` covers rejection.
+- **Real-phone check by Vineet** is reduced to one final smoke test (Task 9): real NFC tag, Gboard voice dictation, and OEM background-kill behaviour, which no emulator reproduces.
+
+Tools considered and not used: Maestro MCP / ADB skills / Appium (need a local emulator or device), OpenTester / Momentic / Kobiton / Firebase Test Lab (paid or extra accounts; no NFC tap either). Private-repo Actions minutes (2,000/month free) cover ~100 emulator runs; making the repo public removes the limit.
+
 ---
 
 ## File Structure
@@ -106,7 +123,8 @@ Plus: `parseCatalog` on a fixture with one recipe of each action type round-trip
 - [ ] **Step 4:** Implement `Recipe.kt` and `RecipeParser.kt` (Json with `ignoreUnknownKeys = true`, `classDiscriminator = "type"`; `Unsupported` via a custom `JsonContentPolymorphicSerializer`).
 - [ ] **Step 5:** Run `./gradlew :core:test` — expect PASS.
 - [ ] **Step 6:** Write `.github/workflows/android.yml`: on push/PR, ubuntu-latest, `actions/setup-java@v4` (temurin 17), `android-actions/setup-android@v3`, run `./gradlew :core:test :app:testDebugUnitTest :app:assembleDebug` in `android/`, upload `app/build/outputs/apk/debug/app-debug.apk` as artifact `habit-tags-debug-apk`.
-- [ ] **Step 7:** Commit and push; run `gh run watch --exit-status` (in background) — expect success and the artifact present (`gh run view --json artifacts`).
+- [ ] **Step 7:** Add the emulator job (see Testing Approach) with a trivial Maestro flow `launch.yaml` (app launches, "Habit Tags" visible) and the debug `TapHandler`/`DebugTapReceiver` stubs.
+- [ ] **Step 8:** Commit and push; run `gh run watch --exit-status` (in background) — expect both jobs green, artifacts `habit-tags-debug-apk` and `e2e-report` present.
 
 ### Task 2: Time windows and rule selection
 
@@ -250,7 +268,7 @@ Seed content (exact ids; copy is the author's to refine later):
   - Write flow uses `NfcAdapter.enableReaderMode` inside the install screen (Task 9).
 
 - [ ] **Step 1:** Implement; `./gradlew` can't build `:app` here — push and `gh run watch --exit-status` until green.
-- [ ] **Step 2: Device check (Vineet):** install the APK artifact; on a temporary debug screen ("Write test tag") write a blank NTAG213; lock screen off/unlocked, tap → toast "Desk: Deep Work on"; tap again → "off". Tap a tag written on another phone / after clearing app data → "Set up this tag" screen. Tag with existing non-app data → write asks to overwrite.
+- [ ] **Step 2: Automated checks:** `TapActivityTest` (real NdefMessage intent → mode started; second intent → ended; unknown tagId → MainActivity "Set up this tag" with that id) and Maestro `tap_toggle.yaml` (seeded tag via `FakeTagIo`, `DEBUG_TAP` twice, assert toasts/home state). Iterate until the emulator job is green.
 - [ ] **Step 3:** Commit.
 
 ### Task 8: Blocking service, DND and effects
@@ -268,7 +286,7 @@ Seed content (exact ids; copy is the author's to refine later):
   - Helpers used by UI: `Permissions.hasUsageAccess(ctx)`, `hasOverlay(ctx)`, `hasDndAccess(ctx)` + intents to the matching settings pages.
 
 - [ ] **Step 1:** Implement; push; CI green.
-- [ ] **Step 2: Device check (Vineet):** grant usage + overlay + DND access; start desk mode → open Instagram/YouTube → overlay within ~1 s; WhatsApp opens normally; DND on. Reboot phone → open YouTube → still blocked. Set desk auto-off to 15 min, kill the app from recents → mode ends within ~1 min of 15 min, DND restored. Gym-bag tap → timer notification after 60 min (or temporarily edit to 1 min).
+- [ ] **Step 2: Automated checks (Maestro `block.yaml`, `reboot.yaml`, `autooff.yaml`):** Settings in `social` → desk tap → open Settings → overlay text visible; `adb shell cmd notification get_interruption_filter`-equivalent via `dumpsys notification` shows DND on. `adb reboot` + wait for boot → open Settings → still blocked. Debug auto-off param 1 min, `am force-stop`, wait 120 s → overlay gone, DND off. Gym-bag with debug timer 1 min → "Timer done" notification visible.
 - [ ] **Step 3:** Commit.
 
 ### Task 9: UI — catalog, install, tag detail, home, gate
@@ -288,8 +306,9 @@ Seed content (exact ids; copy is the author's to refine later):
   - **Checklist:** title + tick boxes, opened by effects.
 
 - [ ] **Step 1:** Implement; push; CI green.
-- [ ] **Step 2: Device check (Vineet), first-run timing:** fresh install → Catalog → Desk → set auto-off 2 h → grant permissions → write blank tag → tap → blocked. Target under 2 minutes. Then: Gate — paste is blocked, Gboard mic dictation is rejected, swipe-typed words are rejected, typing the passage ends the mode. Strict 45 min: second tap refused with time left, gate still works. Change desk auto-off from tag detail → next tap uses it without rewriting. Bed: night tap blocks; morning tap ends and shows the Good morning checklist.
-- [ ] **Step 3:** Commit; tag `v0.1.0-android`; push.
+- [ ] **Step 2: Automated (Maestro `first_run.yaml`, `gate.yaml`, `strict.yaml`, `params.yaml`, `bed.yaml` + Espresso `GateTextFieldTest`)** covering the flows below on the emulator, using `FakeTagIo`, `DEBUG_TAP` and the debug gate length. Iterate until green.
+- [ ] **Step 3: Real-phone smoke test (Vineet, once):** fresh install → Catalog → Desk → set auto-off 2 h → grant permissions → write blank tag → tap → blocked. Target under 2 minutes. Then: Gate — paste is blocked, Gboard mic dictation is rejected, swipe-typed words are rejected, typing the passage ends the mode. Strict 45 min: second tap refused with time left, gate still works. Change desk auto-off from tag detail → next tap uses it without rewriting. Bed: night tap blocks; morning tap ends and shows the Good morning checklist.
+- [ ] **Step 4:** Commit; tag `v0.1.0-android`; push.
 
 ---
 
