@@ -1,0 +1,22 @@
+appId: com.habittags.app
+---
+- launchApp
+- assertVisible: "Habit Tags"
+- tapOn: "Add a tag"
+- tapOn: "Desk: Deep Work"
+- scrollUntilVisible:
+    element: "Add app"
+- tapOn:
+    text: "Add app"
+    index: 0
+- scrollUntilVisible:
+    element: "Settings"
+- tapOn: "Settings"
+- scrollUntilVisible:
+    element: "Write to a tag"
+- tapOn: "Write to a tag"
+- extendedWaitUntil:
+    visible: "My tags"
+    timeout: 10000
+- assertVisible: "Desk: Deep Work"
+- takeScreenshot: first_run

@@ -1,0 +1,6 @@
+appId: com.habittags.app
+---
+- launchApp:
+    stopApp: false
+- assertNotVisible: "On now"
+- takeScreenshot: after_autooff

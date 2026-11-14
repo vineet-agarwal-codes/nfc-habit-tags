@@ -1,0 +1,6 @@
+appId: com.habittags.app
+---
+- openLink: "habittags-debug://expire-soon/last"
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 1000

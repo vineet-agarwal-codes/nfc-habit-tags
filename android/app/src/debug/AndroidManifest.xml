@@ -8,5 +8,17 @@
                 <action android:name="com.habittags.app.DEBUG_TAP" />
             </intent-filter>
         </receiver>
+        <activity
+            android:name=".DebugLinkActivity"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="habittags-debug" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

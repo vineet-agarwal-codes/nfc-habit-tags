@@ -48,6 +48,7 @@ class BlockOverlay(private val context: Context) {
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.OPAQUE,
         )
+        params.title = "HabitTagsBlockOverlay"
         wm.addView(root, params)
         view = root
         message = msg

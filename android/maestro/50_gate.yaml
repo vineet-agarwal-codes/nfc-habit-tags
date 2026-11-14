@@ -1,0 +1,19 @@
+appId: com.habittags.app
+---
+- openLink: "habittags-debug://gate-words/5"
+- launchApp:
+    stopApp: false
+- tapOn: "End now"
+- assertVisible: "End Desk: Deep Work early?"
+- tapOn: "gate-input"
+- inputText: "this is pasted all at once"
+- assertVisible: "Type it letter by letter — voice and paste don't count."
+- takeScreenshot: gate_rejected
+- back
+- back
+- openLink: "habittags-debug://tap/last"
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    notVisible: "On now"
+    timeout: 5000

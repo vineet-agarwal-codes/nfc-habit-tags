@@ -1,0 +1,15 @@
+appId: com.habittags.app
+---
+- openLink: "habittags-debug://param/last/strictMinutes/45"
+- launchApp:
+    stopApp: false
+- tapOn: "Desk: Deep Work"
+- assertVisible: "Can't turn off with the tag for: 45 min"
+- back
+- openLink: "habittags-debug://tap/last"
+- openLink: "habittags-debug://tap/last"
+- launchApp:
+    stopApp: false
+- assertVisible: "On now"
+- assertVisible: "Strict: .* min left"
+- takeScreenshot: strict

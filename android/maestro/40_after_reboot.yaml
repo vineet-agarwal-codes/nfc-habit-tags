@@ -1,0 +1,9 @@
+appId: com.android.settings
+---
+- launchApp:
+    appId: com.android.settings
+- extendedWaitUntil:
+    visible: "Go to home screen"
+    timeout: 15000
+- takeScreenshot: blocked_after_reboot
+- tapOn: "Go to home screen"

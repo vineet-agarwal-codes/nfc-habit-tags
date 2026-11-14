@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
 # Runs on the CI emulator: installs the debug build, grants the permissions a user
-# would grant by hand, then runs instrumented tests and Maestro flows.
+# would grant by hand, then runs instrumented tests and the ordered Maestro flows,
+# with adb checks between flows for things Maestro can't do (reboot, DND state).
 set -uo pipefail
 cd "$(dirname "$0")/.."
 OUT=build/e2e
 mkdir -p "$OUT"
 PKG=com.habittags.app
 status=0
-
-adb logcat -c
-adb install -r -g app/build/outputs/apk/debug/app-debug.apk
-adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+fail() { echo "E2E FAILED: $*"; status=1; }
 
 grant() {
   adb shell appops set $PKG GET_USAGE_STATS allow
@@ -18,22 +16,43 @@ grant() {
   adb shell cmd notification allow_dnd $PKG
   adb shell pm grant $PKG android.permission.POST_NOTIFICATIONS || true
 }
+
+flow() {
+  local name=$1
+  maestro test --format junit --output "$OUT/$name.xml" --debug-output "$OUT/$name" "maestro/$name.yaml" || fail "flow $name"
+}
+
+zen() { adb shell settings get global zen_mode | tr -d '\r'; }
+
+adb logcat -c
+adb install -r -g app/build/outputs/apk/debug/app-debug.apk
+adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 grant
 
 adb shell am instrument -w -r $PKG.test/androidx.test.runner.AndroidJUnitRunner > "$OUT/instrumented.txt" 2>&1
 cat "$OUT/instrumented.txt"
-grep -q "FAILURES!!!\|INSTRUMENTATION_FAILED\|Process crashed" "$OUT/instrumented.txt" && status=1
-grep -q "OK (" "$OUT/instrumented.txt" || status=1
+grep -q "OK (" "$OUT/instrumented.txt" || fail "instrumented tests"
 
-# instrumentation may have cleared state; re-grant before flows
 grant
-for flow in maestro/*.yaml; do
-  name=$(basename "$flow" .yaml)
-  if ! maestro test --format junit --output "$OUT/$name.xml" --debug-output "$OUT/$name" "$flow"; then
-    echo "FLOW FAILED: $name"
-    status=1
-  fi
-done
+flow 10_first_run
+flow 20_tap_toggle
+flow 30_block
+[ "$(zen)" != "0" ] || fail "DND not on while desk mode active (zen_mode=$(zen))"
+
+adb reboot
+adb wait-for-device
+until [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; do sleep 2; done
+sleep 20
+flow 40_after_reboot
+
+flow 50_gate
+flow 60_strict
+flow 70_autooff
+sleep 100
+adb shell dumpsys activity services $PKG > "$OUT/services_after_autooff.txt"
+grep -q "BlockService" "$OUT/services_after_autooff.txt" && fail "BlockService still running after auto-off"
+[ "$(zen)" = "0" ] || fail "DND still on after auto-off (zen_mode=$(zen))"
+flow 80_after_autooff
 
 adb logcat -d > "$OUT/logcat.txt"
 exit $status

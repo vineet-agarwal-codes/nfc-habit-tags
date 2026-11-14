@@ -1,21 +1,32 @@
 package com.habittags.app.ui
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
+import com.habittags.app.HabitTagsApp
 
 class MainActivity : ComponentActivity() {
+    /** Latest intent-driven request (set up a tag, show a checklist, open the gate); consumed by [AppNav]. */
+    val pending = mutableStateOf<Intent?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val setupTagId = intent.getStringExtra(EXTRA_SETUP_TAG_ID)
-        setContent { MaterialTheme { Text(if (setupTagId != null) "Set up this tag" else "Habit Tags") } }
+        pending.value = intent
+        HabitTagsApp.from(this).catalogNow()
+        setContent { HabitTheme { AppNav(this) } }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        pending.value = intent
     }
 
     companion object {
         const val EXTRA_SETUP_TAG_ID = "setupTagId"
         const val EXTRA_CHECKLIST_TITLE = "checklistTitle"
         const val EXTRA_CHECKLIST_ITEMS = "checklistItems"
+        const val EXTRA_GATE_TAG_ID = "gateTagId"
     }
 }

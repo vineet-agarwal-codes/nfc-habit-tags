@@ -1,0 +1,14 @@
+appId: com.habittags.app
+---
+- launchApp:
+    stopApp: false
+- openLink: "habittags-debug://tap/last"
+- extendedWaitUntil:
+    visible: "On now"
+    timeout: 5000
+- assertVisible: "End now"
+- takeScreenshot: mode_on
+- openLink: "habittags-debug://tap/last"
+- extendedWaitUntil:
+    notVisible: "On now"
+    timeout: 5000
