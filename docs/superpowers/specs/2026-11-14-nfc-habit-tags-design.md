@@ -1,6 +1,6 @@
 # NFC Habit Tags — Design
 
-Date: 2026-11-14. Owner: Vineet (plus 2 friends as recipe authors). Working name: "NFC Habit Tags" (brand TBD).
+Date: 2026-11-14. Status: approved by Vineet 2026-11-14. Owner: Vineet (plus 2 friends as recipe authors). Working name: "NFC Habit Tags" (brand TBD).
 
 ## Intent
 
@@ -167,6 +167,6 @@ My call: **Supabase** (Postgres, auth, storage, edge functions). Reasons: cheap 
 - Local storage choice on each platform.
 - Recipe JSON schema details beyond the shape above, as long as it's versioned and both apps validate it.
 
-## Open items for Vineet
+## Later decisions
 
-- No download-redirect website is planned: users are told about the app directly (Vineet, 2026-11-14). Open: iOS only opens an app from a background tag tap via an https Universal Link, so without any domain iPhone users must open the app and press Scan for each tap. A free domain (e.g. a GitHub Pages site) serving only the Apple association file would remove that step; decide before iOS work.
+- Decided 2026-11-14: no download-redirect website. For iOS, a free GitHub Pages site under Vineet's account serves only the Apple association file so tag taps open the app via Universal Link. Set up at the start of iOS work.
