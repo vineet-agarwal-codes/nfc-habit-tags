@@ -49,7 +49,9 @@ fun TagDetailScreen(tagId: String, onDone: () -> Unit) {
         }
         Text("Changes apply on your next tap. The tag itself doesn't need rewriting.", style = MaterialTheme.typography.bodySmall)
 
-        OutlinedButton(onClick = { choosing = true }, modifier = Modifier.fillMaxWidth()) { Text("Switch recipe") }
+        val running = tagId in state.active
+        if (running) Text("This mode is on. End it before switching recipe or removing the tag.", color = MaterialTheme.colorScheme.error)
+        OutlinedButton(onClick = { choosing = true }, enabled = !running, modifier = Modifier.fillMaxWidth()) { Text("Switch recipe") }
         DropdownMenu(expanded = choosing, onDismissRequest = { choosing = false }) {
             catalog?.recipes.orEmpty().filter(::isUsable).forEach { r ->
                 DropdownMenuItem(text = { Text(r.title) }, onClick = {
@@ -59,8 +61,8 @@ fun TagDetailScreen(tagId: String, onDone: () -> Unit) {
             }
         }
         OutlinedButton(onClick = { rewriting = true }, modifier = Modifier.fillMaxWidth()) { Text("Rewrite this tag") }
-        TextButton(onClick = {
-            app.update { it.copy(tags = it.tags - tagId, active = it.active - tagId) }
+        TextButton(enabled = !running, onClick = {
+            app.update { it.copy(tags = it.tags - tagId) }
             BlockController.sync(context)
             onDone()
         }) { Text("Remove tag") }

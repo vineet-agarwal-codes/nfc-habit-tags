@@ -9,6 +9,7 @@ import com.habittags.app.HabitTagsApp
 object BlockController {
     /** Starts the blocking service while any mode is active; otherwise stops it and releases DND. */
     fun sync(context: Context) {
+        ModeExpiry.scheduleNext(context)
         val intent = Intent(context, BlockService::class.java)
         if (HabitTagsApp.from(context).state.value.active.isEmpty()) {
             context.stopService(intent)

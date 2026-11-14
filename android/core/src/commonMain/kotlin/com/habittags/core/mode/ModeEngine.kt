@@ -24,6 +24,8 @@ data class ActiveMode(
     val strictUntil: Long?,
     val blockedGroups: Set<String>,
     val dnd: Boolean,
+    /** Apps resolved when the mode started, so later group edits can't weaken a running mode. */
+    val blockedPackages: Set<String> = emptySet(),
 )
 
 sealed interface TapResult {
@@ -44,11 +46,12 @@ object ModeEngine {
         recipe: Recipe?,
         now: Instant,
         timeZone: TimeZone = TimeZone.currentSystemDefault(),
+        groups: Map<String, Set<String>> = emptyMap(),
     ): TapResult {
         if (tag == null) return TapResult.UnknownTag
         if (recipe == null) return TapResult.RecipeUnavailable
         val nowMs = now.toEpochMilliseconds()
-        val current = active[tag.tagId]
+        val current = active[tag.tagId]?.takeUnless { it.autoOffAt != null && nowMs >= it.autoOffAt }
         if (recipe.mode == Mode.toggle && current != null) {
             val strictUntil = current.strictUntil
             if (strictUntil != null && nowMs < strictUntil) return TapResult.StrictRefused(strictUntil - nowMs)
@@ -61,14 +64,16 @@ object ModeEngine {
 
         val autoOff = bindInt(recipe.autoOffMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
         val strict = bindInt(recipe.strictMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
+        val blockedGroups = actions.filterIsInstance<BlockGroups>().flatMap { it.groups }.toSet()
         val mode = ActiveMode(
             tagId = tag.tagId,
             recipeId = recipe.id,
             startedAt = nowMs,
             autoOffAt = autoOff?.let { nowMs + it * MINUTE_MS },
             strictUntil = strict?.let { nowMs + it * MINUTE_MS },
-            blockedGroups = actions.filterIsInstance<BlockGroups>().flatMap { it.groups }.toSet(),
+            blockedGroups = blockedGroups,
             dnd = actions.any { it is Dnd },
+            blockedPackages = blockedGroups.flatMap { groups[it].orEmpty() }.toSet(),
         )
         return TapResult.Started(active + (tag.tagId to mode), effects)
     }
@@ -81,8 +86,7 @@ object ModeEngine {
 
     fun endViaGate(active: Map<String, ActiveMode>, tagId: String): Map<String, ActiveMode> = active - tagId
 
-    fun blockedPackages(active: Map<String, ActiveMode>, groups: Map<String, Set<String>>): Set<String> =
-        active.values.flatMap { it.blockedGroups }.flatMap { groups[it].orEmpty() }.toSet()
+    fun blockedPackages(active: Map<String, ActiveMode>): Set<String> = active.values.flatMap { it.blockedPackages }.toSet()
 
     fun dndWanted(active: Map<String, ActiveMode>): Boolean = active.values.any { it.dnd }
 }

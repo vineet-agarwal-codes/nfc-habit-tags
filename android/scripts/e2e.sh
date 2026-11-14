@@ -48,6 +48,8 @@ flow 10_first_run
 flow 20_tap_toggle
 flow 30_block
 overlay_visible || fail "overlay not visible over YouTube"
+adb shell dumpsys alarm > "$OUT/alarms_30.txt"
+grep -q "com.habittags.app" "$OUT/alarms_30.txt" || fail "no auto-off alarm scheduled while a mode is active"
 [ "$(zen)" != "0" ] || fail "DND not on while desk mode active (zen_mode=$(zen))"
 
 adb reboot
@@ -55,6 +57,13 @@ adb wait-for-device
 until [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; do sleep 2; done
 sleep 20
 flow 40_after_reboot
+
+# An app update kills the service; it must come back on its own.
+adb install -r -g app/build/outputs/apk/debug/app-debug.apk
+grant
+sleep 10
+adb shell dumpsys activity services $PKG > "$OUT/services_after_update.txt"
+grep -q "BlockService" "$OUT/services_after_update.txt" || fail "BlockService not restored after app update"
 
 flow 50_gate
 flow 60_strict

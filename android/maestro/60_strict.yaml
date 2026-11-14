@@ -13,3 +13,8 @@ appId: com.habittags.app
 - assertVisible: "On now"
 - assertVisible: "Strict: .* min left"
 - takeScreenshot: strict
+- tapOn:
+    text: "Desk: Deep Work"
+    index: 1
+- assertVisible: "This mode is on. End it before switching recipe or removing the tag."
+- back

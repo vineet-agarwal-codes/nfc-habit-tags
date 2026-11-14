@@ -28,7 +28,7 @@ class ModeEngineTest {
     private val deskTag = tag("t1", desk)
 
     private fun tap(active: Map<String, ActiveMode>, tag: InstalledTag?, recipe: Recipe?, time: String) =
-        ModeEngine.onTap(active, tag, recipe, at(time), zone)
+        ModeEngine.onTap(active, tag, recipe, at(time), zone, groups)
 
     private fun start(tag: InstalledTag = deskTag, time: String = "10:00", active: Map<String, ActiveMode> = emptyMap()) =
         assertIs<TapResult.Started>(tap(active, tag, recipes[tag.recipeId], time))
@@ -75,9 +75,9 @@ class ModeEngineTest {
     @Test
     fun endingOneModeKeepsSharedGroupBlocked() {
         val both = start(tag("b1", bed), active = start().state).state
-        assertEquals(setOf("insta", "fb", "yt"), ModeEngine.blockedPackages(both, groups))
+        assertEquals(setOf("insta", "fb", "yt"), ModeEngine.blockedPackages(both))
         val bedOnly = assertIs<TapResult.Ended>(tap(both, deskTag, desk, "10:10")).state
-        assertEquals(setOf("insta", "fb"), ModeEngine.blockedPackages(bedOnly, groups))
+        assertEquals(setOf("insta", "fb"), ModeEngine.blockedPackages(bedOnly))
         assertTrue(ModeEngine.dndWanted(both))
         assertFalse(ModeEngine.dndWanted(bedOnly))
     }
@@ -107,5 +107,20 @@ class ModeEngineTest {
     fun toggleRuleWithOnlyEffectsRunsWithoutStartingMode() {
         val logOnly = desk.copy(rules = listOf(Rule(actions = listOf(Log("day")))))
         assertEquals(TapResult.Ran(listOf(Log("day"))), tap(emptyMap(), deskTag, logOnly, "10:00"))
+    }
+
+    @Test
+    fun runningModeKeepsAppsResolvedAtStart() {
+        val started = start()
+        assertEquals(setOf("insta", "fb", "yt"), started.state.getValue("t1").blockedPackages)
+        // Editing groups later (e.g. removing "insta") must not weaken a running mode.
+        assertEquals(setOf("insta", "fb", "yt"), ModeEngine.blockedPackages(started.state))
+    }
+
+    @Test
+    fun tapAfterAutoOffStartsFreshInsteadOfEnding() {
+        val state = start().state
+        val restarted = assertIs<TapResult.Started>(tap(state, deskTag, desk, "11:31"))
+        assertEquals(ms("11:31") + 90 * MIN, restarted.state.getValue("t1").autoOffAt)
     }
 }

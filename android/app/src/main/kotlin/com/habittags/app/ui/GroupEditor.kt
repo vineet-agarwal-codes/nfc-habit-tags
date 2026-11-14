@@ -60,6 +60,7 @@ fun GroupEditor(groupId: String) {
             }
         }
         TextButton(onClick = { picking = true }) { Text("Add app") }
+        Text("Changes apply the next time a mode starts.", style = MaterialTheme.typography.bodySmall)
     }
 
     if (picking) {

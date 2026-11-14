@@ -17,7 +17,6 @@ import androidx.lifecycle.lifecycleScope
 import com.habittags.app.HabitTagsApp
 import com.habittags.app.R
 import com.habittags.app.TapHandler
-import com.habittags.app.effects.EffectRunner
 import com.habittags.app.ui.MainActivity
 import com.habittags.core.mode.ActiveMode
 import com.habittags.core.mode.ModeEngine
@@ -54,15 +53,8 @@ class BlockService : LifecycleService() {
         var shown: Set<String>? = null
         while (lifecycleScope.isActive) {
             val now = System.currentTimeMillis()
-            val active = app.state.value.active
-            val (remaining, _) = ModeEngine.expire(active, now, app::recipe)
-            if (remaining != active) {
-                app.update { it.copy(active = remaining) }
-                for (mode in active.values - remaining.values.toSet()) {
-                    val recipe = app.recipe(mode.recipeId)
-                    EffectRunner.run(this, recipe?.endActions.orEmpty(), recipe, app.state.value.tags[mode.tagId]?.params.orEmpty())
-                }
-            }
+            ModeExpiry.expireNow(this)
+            val remaining = app.state.value.active
             if (remaining.isEmpty()) {
                 overlay.hide()
                 DndController.apply(this, false)
@@ -75,9 +67,7 @@ class BlockService : LifecycleService() {
             }
             DndController.apply(this, ModeEngine.dndWanted(remaining))
             val fg = currentForegroundPackage(now)
-            val blocking = remaining.values.filter { mode ->
-                fg != null && fg != packageName && app.groups().filterKeys { it in mode.blockedGroups }.values.any { fg in it }
-            }
+            val blocking = remaining.values.filter { fg != null && fg != packageName && fg in it.blockedPackages }
             if (fg != lastLoggedFg) {
                 Log.d(TAG, "foreground=$fg blocking=${blocking.map { it.tagId }}")
                 lastLoggedFg = fg

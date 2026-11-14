@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import com.habittags.app.block.BlockController
+import com.habittags.app.block.ModeExpiry
 import com.habittags.app.effects.EffectRunner
 import com.habittags.app.ui.MainActivity
 import com.habittags.core.mode.ModeEngine
@@ -19,10 +20,11 @@ private const val MAX_LOG = 500
 object TapHandler {
     fun handle(context: Context, tagId: String): TapResult {
         val app = HabitTagsApp.from(context)
+        ModeExpiry.expireNow(context)
         val state = app.state.value
         val tag = state.tags[tagId]
         val recipe = tag?.let { app.recipe(it.recipeId) }
-        val result = ModeEngine.onTap(state.active, tag, recipe, Clock.System.now())
+        val result = ModeEngine.onTap(state.active, tag, recipe, Clock.System.now(), groups = app.groups())
 
         if (tag != null && result != TapResult.RecipeUnavailable) {
             val entry = TapLogEntry(System.currentTimeMillis(), tagId, tag.label)
@@ -40,13 +42,14 @@ object TapHandler {
             }
             TapResult.RecipeUnavailable -> "This tag's recipe isn't available on this phone"
             is TapResult.Started -> {
-                app.update { it.copy(active = result.state) }
+                val mode = result.state.getValue(tagId)
+                app.update { it.copy(active = it.active + (tagId to mode)) }
                 EffectRunner.run(context, result.effects, recipe, tag?.params.orEmpty())
                 val off = result.state.getValue(tagId).autoOffAt
                 if (off == null) "$title on" else "$title on · off at ${formatTime(off)}"
             }
             is TapResult.Ended -> {
-                app.update { it.copy(active = result.state) }
+                app.update { it.copy(active = it.active - tagId) }
                 EffectRunner.run(context, result.effects, recipe, tag?.params.orEmpty())
                 "$title off"
             }
