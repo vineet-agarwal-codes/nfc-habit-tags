@@ -19,6 +19,7 @@ Success for v1: a new user with a blank tag goes from install to a working "desk
 - **Recipes are free** for now. Charging for recipes is a later phase; keep the data model ready for a price but build no purchasing for recipes.
 - **Bring-your-own tag is a first-class path.** Selling the team's own pre-encoded tags is a later phase.
 - **iOS soft launch is OK**: if Apple hasn't approved the Family Controls entitlement when the app is otherwise ready, ship iOS without app blocking (timers, checklists, open-app, log, optional DND Shortcut) and add blocking on approval. Recipes whose blocking action is unavailable show it as "coming soon".
+- **Build order: Android first** (Vineet tests it himself), then iOS — later or in parallel — tested by teammates with iPhones via TestFlight. iOS stays the revenue priority; Android-first is about who can test now.
 - **Market: India first**, then US/UK/global. v1 is free with no payments. The phase-2 payment design must work for India and international buyers (provider chosen then).
 - **Developer accounts**: Vineet will create Apple Developer ($99/yr) and Google Play Console ($25 one-time) accounts. Apple account comes first, because the Family Controls entitlement request needs it.
 
