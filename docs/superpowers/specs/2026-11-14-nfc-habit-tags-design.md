@@ -82,7 +82,10 @@ Shape (illustrative):
   "description": "...",
   "placementHint": "Stick under your desk edge",
   "mode": "toggle",              // "toggle" | "oneShot"
-  "autoOffMinutes": 90,          // optional
+  "params": [                    // user-adjustable, per installed tag
+    { "key": "autoOffMinutes", "type": "duration", "default": 90, "min": 15, "max": 480 }
+  ],
+  "autoOffMinutes": "{{autoOffMinutes}}",
   "rules": [
     { "when": { "time": "06:00-22:00" }, "actions": [ ... ] },
     { "when": { "time": "22:00-06:00" }, "actions": [ ... ] }
@@ -107,6 +110,14 @@ v1 action set (each app declares which it supports; unsupported actions are show
 - iOS: Screen Time only gives opaque app tokens chosen by the user on their device, so on install the app shows Apple's app picker with guidance ("pick your social apps"). The chosen tokens are stored per group on device and reused by every recipe that names that group. They are never uploaded.
 
 Rules: time windows (local time) choose which action list runs on a tap. `toggle` mode: tap once = on, tap again = off (off reverses what "on" did). `autoOffMinutes` ends it automatically.
+
+**Configurable parameters.** A recipe declares `params` (type, default, limits). When a user links a recipe to a tag they can change those values (e.g. desk auto-off 1 h vs 4 h), and change them again later from the tag's screen. Values are stored per tag on the device and synced if signed in.
+
+**Tags never need rewriting for recipe or setting changes.** A tag holds only its `tagId`; which recipe it runs and with what settings is looked up in the app at tap time. Changing a setting, switching a tag to another recipe, or an author editing a recipe on the backend all take effect on the next tap.
+
+**Recipe updates reach users automatically.** Apps fetch the catalog from the backend on launch and in the background; new and edited recipes appear without an app update. An installed recipe follows the author's latest version (Claude's call) while keeping the user's parameter values; new params get their defaults, removed ones are dropped. An app update is needed only when a recipe uses a brand-new *kind* of action the installed app has no code for (that's what `schemaVersion` guards).
+
+**Ending a mode early (friction gate).** The normal ways to end a mode are tapping the tag again or the auto-off timer. Ending it from the app without the tag goes through a deliberate-effort gate: the user must type a displayed passage exactly, on the phone keyboard. Paste is disabled, and voice dictation / large text inserts are rejected (only small typed increments are accepted; detection is heuristic, since apps can't fully disable a keyboard's mic). Passage length: see open items.
 
 The bed example becomes: night tap → sleep mode on (block apps + DND); morning tap (or auto-off at wake time) → sleep mode off + show morning checklist + open workout app.
 
@@ -140,10 +151,10 @@ My call: **Supabase** (Postgres, auth, storage, edge functions). Reasons: cheap 
 
 - **Android blocking: usage-stats + overlay from day one**, no AccessibilityService. Avoids the Play policy declaration risk; a block that kicks in within about a second is acceptable for a habit tool (it's a speed bump, not parental control).
 - **tagId is generated on the phone** (random, ≥96 bits) in v1. No server registry yet. A tap on a tagId this phone doesn't know opens a "Set up this tag" flow, so a tag scanned by another person's phone simply gets linked on their phone too (tags are per-phone). Phase 2 adds a `tags` table of pre-provisioned IDs with a default recipe for sold tags.
-- **Toggle state lives on the device**, per tag. Several recipes can be active at once; blocked apps are the union of all active recipes; turning one off removes only what it added. The home screen lists active modes with an "end now" button (the emergency escape).
+- **Toggle state lives on the device**, per tag. Several recipes can be active at once; blocked apps are the union of all active recipes; turning one off removes only what it added. The home screen lists active modes with an "end now" button, behind the friction gate described under Recipes.
 - **Permissions are asked just in time**: Screen Time / usage access / DND access are requested only when the user installs a recipe that needs them, never all up front. Android DND is in v1 under this rule.
 - **Schema versions:** a recipe needing a newer schema than the app supports is shown greyed out with "Update the app to use this".
-- **Dev domain:** a throwaway domain is used for development and testing; no tag leaves the team until the real domain is set (see open items).
+- **No domain needed for the Android MVP:** Android tags carry an Android Application Record plus our own record type, which opens the app directly without any website. A real https domain is only needed before iPhone testing (iOS background reading requires a Universal Link); Android-written tags get moved over with "rewrite this tag" then.
 
 ## Left to the builder
 
@@ -155,4 +166,5 @@ My call: **Supabase** (Postgres, auth, storage, edge functions). Reasons: cheap 
 
 ## Open items for Vineet
 
-- Product name and domain (the tag URL is permanent once tags are written — the domain must be one we'll keep).
+- Friction-gate passage length: ~250 words takes 6–7 minutes on a phone; ~2 minutes is about 70–80 words.
+- Product name and domain — needed before iPhone testing, not for the Android MVP.
