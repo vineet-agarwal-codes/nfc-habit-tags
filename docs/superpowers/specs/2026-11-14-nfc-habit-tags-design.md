@@ -131,6 +131,15 @@ My call: **Supabase** (Postgres, auth, storage, edge functions). Reasons: cheap 
 - NFC hardware: iPhone XS or newer for background reading; Android phones without NFC can't use the product (show this at install).
 - Tag type: NTAG213/215/216 recommended; the app should say so.
 
+## Calls made after builder review (Claude's calls — Vineet to check)
+
+- **Android blocking: usage-stats + overlay from day one**, no AccessibilityService. Avoids the Play policy declaration risk; a block that kicks in within about a second is acceptable for a habit tool (it's a speed bump, not parental control).
+- **tagId is generated on the phone** (random, ≥96 bits) in v1. No server registry yet. A tap on a tagId this phone doesn't know opens a "Set up this tag" flow, so a tag scanned by another person's phone simply gets linked on their phone too (tags are per-phone). Phase 2 adds a `tags` table of pre-provisioned IDs with a default recipe for sold tags.
+- **Toggle state lives on the device**, per tag. Several recipes can be active at once; blocked apps are the union of all active recipes; turning one off removes only what it added. The home screen lists active modes with an "end now" button (the emergency escape).
+- **Permissions are asked just in time**: Screen Time / usage access / DND access are requested only when the user installs a recipe that needs them, never all up front. Android DND is in v1 under this rule.
+- **Schema versions:** a recipe needing a newer schema than the app supports is shown greyed out with "Update the app to use this".
+- **Dev domain:** a throwaway domain is used for development and testing; no tag leaves the team until the real domain is set (see open items).
+
 ## Left to the builder
 
 - Exact screen designs per platform (native conventions on each).
