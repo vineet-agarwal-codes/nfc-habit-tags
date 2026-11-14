@@ -4,11 +4,13 @@
 
 **Goal:** An Android app that lets a user pick a curated recipe, write it to any blank NFC tag, and tap the tag to switch the phone into that mode (block app groups, DND, timer, checklist, open app, log), with adjustable settings, strict minimums, auto-off and a typing gate to end a mode early.
 
-**Architecture:** Gradle project under `android/` with two modules. `:core` is pure Kotlin/JVM and holds every rule that isn't Android-API-bound (recipe parsing, param binding, time windows, mode state machine, catalog merge, tag payload, friction-gate validator, state persistence) and is TDD'd locally. `:app` is the Android shell (NFC, foreground blocking service, DND, Compose UI). This VM is arm64 with no Android SDK, so `:app` is compiled and its tests run on GitHub Actions; Vineet sideloads the APK artifact and does the device checks. The catalog comes from a bundled `catalog.json` behind a `CatalogSource` interface; the Supabase source and optional login/sync are a separate, later plan.
+**Architecture:** Gradle project under `android/` with two modules. `:core` is a Kotlin Multiplatform module (jvm target used by `:app`; iOS targets declared, built only on macOS)  and holds every rule that isn't Android-API-bound (recipe parsing, param binding, time windows, mode state machine, catalog merge, tag payload, friction-gate validator, state persistence) and is TDD'd locally. `:app` is the Android shell (NFC, foreground blocking service, DND, Compose UI). This VM is arm64 with no Android SDK, so `:app` is compiled and its tests run on GitHub Actions; Vineet sideloads the APK artifact and does the device checks. The catalog comes from a bundled `catalog.json` behind a `CatalogSource` interface; the Supabase source and optional login/sync are a separate, later plan.
 
 **Tech Stack:** Kotlin 2.0, JDK 17, Gradle 8.10 (Kotlin DSL), AGP 8.7, kotlinx.serialization 1.7, JUnit 5 (core), Jetpack Compose (Material 3), GitHub Actions.
 
 **Spec:** `docs/superpowers/specs/2026-11-14-nfc-habit-tags-design.md`
+
+**KMP conversion (2026-11-14, Vineet):** `:core` moved to Kotlin Multiplatform so the iOS app reuses every core rule: sources in `commonMain`, kotlinx-datetime instead of java.time (`ModeEngine.onTap` takes an `Instant` + `TimeZone`), `expect fun secureRandomBytes` for tag ids, `StateCodec` (String encode/decode) in core with file I/O in `:app`'s `StateStore`, gate sentences as a Kotlin list, tests in `commonTest` with kotlin.test (seed-catalog test stays in `jvmTest` since it reads a file). Local test command: `./gradlew :core:jvmTest`.
 
 ## Global Constraints
 

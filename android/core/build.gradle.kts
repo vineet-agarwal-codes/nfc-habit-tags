@@ -1,19 +1,27 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
 }
 
-kotlin { jvmToolchain(17) }
+// iOS targets only build on macOS (or when forced with -Phabittags.ios), so Linux dev and CI stay green.
+val buildIos = System.getProperty("os.name").startsWith("Mac") || providers.gradleProperty("habittags.ios").isPresent
 
-dependencies {
-    api(libs.serialization.json)
-    testImplementation(platform(libs.junit.bom))
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.params)
-    testRuntimeOnly(libs.junit.launcher)
-}
+kotlin {
+    jvmToolchain(17)
+    jvm()
+    if (buildIos) {
+        iosArm64()
+        iosSimulatorArm64()
+        iosX64()
+    }
 
-tasks.test {
-    useJUnitPlatform()
-    testLogging { events("failed"); exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL }
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.serialization.json)
+            api(libs.kotlinx.datetime)
+        }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+    }
 }

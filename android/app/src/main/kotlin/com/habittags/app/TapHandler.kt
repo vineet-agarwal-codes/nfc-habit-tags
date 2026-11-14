@@ -11,7 +11,7 @@ import com.habittags.core.mode.TapResult
 import com.habittags.core.store.TapLogEntry
 import java.time.Instant
 import java.time.ZoneId
-import java.time.ZonedDateTime
+import kotlinx.datetime.Clock
 import java.time.format.DateTimeFormatter
 
 private const val MAX_LOG = 500
@@ -22,7 +22,7 @@ object TapHandler {
         val state = app.state.value
         val tag = state.tags[tagId]
         val recipe = tag?.let { app.recipe(it.recipeId) }
-        val result = ModeEngine.onTap(state.active, tag, recipe, ZonedDateTime.now())
+        val result = ModeEngine.onTap(state.active, tag, recipe, Clock.System.now())
 
         if (tag != null && result != TapResult.RecipeUnavailable) {
             val entry = TapLogEntry(System.currentTimeMillis(), tagId, tag.label)
