@@ -18,6 +18,9 @@ Success for v1: a new user with a blank tag goes from install to a working "desk
 - **Recipes are authored only by Vineet and friends** at launch. Users cannot publish.
 - **Recipes are free** for now. Charging for recipes is a later phase; keep the data model ready for a price but build no purchasing for recipes.
 - **Bring-your-own tag is a first-class path.** Selling the team's own pre-encoded tags is a later phase.
+- **iOS soft launch is OK**: if Apple hasn't approved the Family Controls entitlement when the app is otherwise ready, ship iOS without app blocking (timers, checklists, open-app, log, optional DND Shortcut) and add blocking on approval. Recipes whose blocking action is unavailable show it as "coming soon".
+- **Market: India first**, then US/UK/global. v1 is free with no payments. The phase-2 payment design must work for India and international buyers (provider chosen then).
+- **Developer accounts**: Vineet will create Apple Developer ($99/yr) and Google Play Console ($25 one-time) accounts. Apple account comes first, because the Family Controls entitlement request needs it.
 
 ## Goals (v1)
 
@@ -55,6 +58,7 @@ Success for v1: a new user with a blank tag goes from install to a working "desk
 - The domain is configured for **iOS Universal Links** and **Android App Links**, so a tap opens our app directly when installed. When not installed, the URL serves a small web page that sends the user to the right store (this is what makes phase-2 sold tags work out of the box).
 - **Writing a blank tag:** app generates `tagId`, writes the URL, records `tagId → recipe` locally.
 - **Adopting a tag that already has our URL** (e.g. re-linking, or a phase-2 sold tag): app reads it and lets the user assign a recipe.
+- **Domain changes:** the apps accept tag URLs on a list of known domains (current + any past ones), and offer "rewrite this tag" to move an unlocked tag to the current domain. Our phase-2 tags are therefore sold unlocked. iOS Universal Links only work while the old domain still serves its association file, so an old domain is kept renewed rather than dropped.
 - Tags already holding someone else's data must be overwritten (with confirmation). Locked tags are reported as unusable.
 - Tag-to-recipe mapping lives on the device; synced to the backend only when the user is signed in (so a new phone restores it).
 
@@ -151,4 +155,3 @@ My call: **Supabase** (Postgres, auth, storage, edge functions). Reasons: cheap 
 ## Open items for Vineet
 
 - Product name and domain (the tag URL is permanent once tags are written — the domain must be one we'll keep).
-- Launch market(s) (affects payment provider and store listing languages).
