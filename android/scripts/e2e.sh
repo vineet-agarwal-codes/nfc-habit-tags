@@ -24,7 +24,8 @@ flow() {
   adb logcat -c
 }
 
-overlay_visible() { adb shell dumpsys window windows | grep -A30 "HabitTagsBlockOverlay" | grep -q "isVisible=true\|mViewVisibility=0x0"; }
+# Counts only if WindowManager reports the overlay on screen (system apps like Settings force-hide overlays).
+overlay_visible() { adb shell dumpsys window windows | grep -A40 "Window{.* HabitTagsBlockOverlay}:" | grep -m1 "isVisible=" | grep -q "isVisible=true"; }
 
 zen() { adb shell settings get global zen_mode | tr -d '\r'; }
 
