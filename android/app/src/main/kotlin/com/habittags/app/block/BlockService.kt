@@ -9,6 +9,7 @@ import android.app.usage.UsageStatsManager
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.lifecycle.LifecycleService
@@ -30,6 +31,7 @@ class BlockService : LifecycleService() {
     private var loop: Job? = null
     private var lastQueryMs = 0L
     private var foregroundPackage: String? = null
+    private var lastLoggedFg: String? = null
     private lateinit var overlay: BlockOverlay
 
     override fun onCreate() {
@@ -75,6 +77,10 @@ class BlockService : LifecycleService() {
             val fg = currentForegroundPackage(now)
             val blocking = remaining.values.filter { mode ->
                 fg != null && fg != packageName && app.groups().filterKeys { it in mode.blockedGroups }.values.any { fg in it }
+            }
+            if (fg != lastLoggedFg) {
+                Log.d(TAG, "foreground=$fg blocking=${blocking.map { it.tagId }}")
+                lastLoggedFg = fg
             }
             if (blocking.isEmpty()) overlay.hide() else overlay.show(overlayText(blocking))
             delay(POLL_MS)
@@ -125,6 +131,7 @@ class BlockService : LifecycleService() {
     }
 
     companion object {
+        private const val TAG = "BlockService"
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "active_modes"
         private const val POLL_MS = 1_000L

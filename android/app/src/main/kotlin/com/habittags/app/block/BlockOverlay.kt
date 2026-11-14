@@ -18,7 +18,10 @@ class BlockOverlay(private val context: Context) {
     private var message: TextView? = null
 
     fun show(text: String) {
-        if (!Settings.canDrawOverlays(context)) return
+        if (!Settings.canDrawOverlays(context)) {
+            android.util.Log.w("BlockOverlay", "Overlay permission missing")
+            return
+        }
         view?.let { message?.text = text; return }
         val msg = TextView(context).apply {
             this.text = text

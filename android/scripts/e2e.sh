@@ -20,7 +20,11 @@ grant() {
 flow() {
   local name=$1
   maestro test --format junit --output "$OUT/$name.xml" --debug-output "$OUT/$name" "maestro/$name.yaml" || fail "flow $name"
+  adb logcat -d > "$OUT/$name.logcat.txt"
+  adb logcat -c
 }
+
+overlay_visible() { adb shell dumpsys window windows | grep -A30 "HabitTagsBlockOverlay" | grep -q "isVisible=true\|mViewVisibility=0x0"; }
 
 zen() { adb shell settings get global zen_mode | tr -d '\r'; }
 
@@ -37,6 +41,8 @@ grant
 flow 10_first_run
 flow 20_tap_toggle
 flow 30_block
+adb shell dumpsys window windows > "$OUT/windows_30.txt"
+overlay_visible || fail "overlay not visible over Settings"
 [ "$(zen)" != "0" ] || fail "DND not on while desk mode active (zen_mode=$(zen))"
 
 adb reboot
@@ -55,4 +61,5 @@ grep -q "BlockService" "$OUT/services_after_autooff.txt" && fail "BlockService s
 flow 80_after_autooff
 
 adb logcat -d > "$OUT/logcat.txt"
+mv ./*.png "$OUT/" 2>/dev/null || true
 exit $status
