@@ -25,7 +25,11 @@ flow() {
 }
 
 # Counts only if WindowManager reports the overlay on screen (system apps like Settings force-hide overlays).
-overlay_visible() { adb shell dumpsys window windows | grep -A40 "Window{.* HabitTagsBlockOverlay}:" | grep -m1 "isVisible=" | grep -q "isVisible=true"; }
+overlay_visible() {
+  adb shell dumpsys window windows > "$OUT/windows.txt"
+  grep -A40 "Window{.* HabitTagsBlockOverlay}:" "$OUT/windows.txt" > "$OUT/overlay_window.txt"
+  [ "$(grep -m1 -o "isVisible=[a-z]*" "$OUT/overlay_window.txt")" = "isVisible=true" ]
+}
 
 zen() { adb shell settings get global zen_mode | tr -d '\r'; }
 
@@ -43,8 +47,7 @@ adb shell cmd package query-activities -a android.intent.action.MAIN -c android.
 flow 10_first_run
 flow 20_tap_toggle
 flow 30_block
-adb shell dumpsys window windows > "$OUT/windows_30.txt"
-overlay_visible || fail "overlay not visible over Contacts"
+overlay_visible || fail "overlay not visible over YouTube"
 [ "$(zen)" != "0" ] || fail "DND not on while desk mode active (zen_mode=$(zen))"
 
 adb reboot
