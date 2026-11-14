@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <receiver
+            android:name=".DebugTapReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.habittags.app.DEBUG_TAP" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

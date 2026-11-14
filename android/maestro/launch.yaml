@@ -1,0 +1,6 @@
+appId: com.habittags.app
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Habit Tags"
+- takeScreenshot: launch
