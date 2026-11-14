@@ -48,7 +48,8 @@ object ModeEngine {
         }
         val actions = selectRule(recipe.rules, now.toLocalTime())?.actions ?: return TapResult.Ran(emptyList())
         val effects = actions.filter { it !is BlockGroups && it !is Dnd }
-        if (recipe.mode == Mode.oneShot) return TapResult.Ran(effects)
+        // A toggle rule with nothing to keep on (e.g. a daytime tap on the bed tag) just runs its effects.
+        if (recipe.mode == Mode.oneShot || effects.size == actions.size) return TapResult.Ran(effects)
 
         val autoOff = bindInt(recipe.autoOffMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
         val strict = bindInt(recipe.strictMinutes, recipe.params, tag.params)?.takeIf { it > 0 }

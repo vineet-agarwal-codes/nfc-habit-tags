@@ -93,3 +93,11 @@ class ModeEngineTest {
         assertEquals(TapResult.Ran(emptyList()), ModeEngine.onTap(emptyMap(), deskTag, nightOnly, at("10:00")))
     }
 }
+
+class ToggleWithoutModeActionsTest {
+    @Test
+    fun toggleRuleWithOnlyEffectsRunsWithoutStartingMode() {
+        val logOnly = desk.copy(rules = listOf(com.habittags.core.recipe.Rule(actions = listOf(Log("day")))))
+        assertEquals(TapResult.Ran(listOf(Log("day"))), ModeEngine.onTap(emptyMap(), tag("t1", desk), logOnly, at("10:00")))
+    }
+}
