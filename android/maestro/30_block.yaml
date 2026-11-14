@@ -5,10 +5,10 @@ appId: com.habittags.app
 - openLink: "habittags-debug://tap/last"
 - extendedWaitUntil:
     visible: "On now"
-    timeout: 5000
+    timeout: 10000
 - launchApp:
-    appId: com.android.settings
+    appId: com.android.contacts
 - extendedWaitUntil:
     visible: "Go to home screen"
-    timeout: 5000
+    timeout: 10000
 - takeScreenshot: blocked

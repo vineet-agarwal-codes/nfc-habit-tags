@@ -38,6 +38,7 @@ cat "$OUT/instrumented.txt"
 grep -q "OK (" "$OUT/instrumented.txt" || fail "instrumented tests"
 
 grant
+adb shell cmd package query-activities -a android.intent.action.MAIN -c android.intent.category.LAUNCHER | grep "packageName=" | sort -u > "$OUT/launcher_apps.txt"
 flow 10_first_run
 flow 20_tap_toggle
 flow 30_block

@@ -1,7 +1,7 @@
-appId: com.android.settings
+appId: com.android.contacts
 ---
 - launchApp:
-    appId: com.android.settings
+    appId: com.android.contacts
 - extendedWaitUntil:
     visible: "Go to home screen"
     timeout: 15000

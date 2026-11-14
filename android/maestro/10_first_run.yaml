@@ -10,8 +10,8 @@ appId: com.habittags.app
     text: "Add app"
     index: 0
 - scrollUntilVisible:
-    element: "Settings"
-- tapOn: "Settings"
+    element: "Contacts"
+- tapOn: "Contacts"
 - scrollUntilVisible:
     element: "Write to a tag"
 - tapOn: "Write to a tag"
