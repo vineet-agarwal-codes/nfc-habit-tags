@@ -1,0 +1,133 @@
+package com.habittags.app.block
+
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
+import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
+import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.lifecycleScope
+import com.habittags.app.HabitTagsApp
+import com.habittags.app.R
+import com.habittags.app.TapHandler
+import com.habittags.app.effects.EffectRunner
+import com.habittags.app.ui.MainActivity
+import com.habittags.core.mode.ActiveMode
+import com.habittags.core.mode.ModeEngine
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+
+/** Keeps active modes enforced: expires them on time, applies DND, and covers blocked apps with an overlay. */
+class BlockService : LifecycleService() {
+    private var loop: Job? = null
+    private var lastQueryMs = 0L
+    private var foregroundPackage: String? = null
+    private lateinit var overlay: BlockOverlay
+
+    override fun onCreate() {
+        super.onCreate()
+        overlay = BlockOverlay(this)
+        createChannel()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        super.onStartCommand(intent, flags, startId)
+        val type = if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(HabitTagsApp.from(this).state.value.active), type)
+        if (loop?.isActive != true) loop = lifecycleScope.launch { run() }
+        return START_STICKY
+    }
+
+    private suspend fun run() {
+        val app = HabitTagsApp.from(this)
+        lastQueryMs = System.currentTimeMillis() - LOOKBACK_MS
+        var shown: Set<String>? = null
+        while (lifecycleScope.isActive) {
+            val now = System.currentTimeMillis()
+            val active = app.state.value.active
+            val (remaining, _) = ModeEngine.expire(active, now, app::recipe)
+            if (remaining != active) {
+                app.update { it.copy(active = remaining) }
+                for (mode in active.values - remaining.values.toSet()) {
+                    val recipe = app.recipe(mode.recipeId)
+                    EffectRunner.run(this, recipe?.endActions.orEmpty(), recipe, app.state.value.tags[mode.tagId]?.params.orEmpty())
+                }
+            }
+            if (remaining.isEmpty()) {
+                overlay.hide()
+                DndController.apply(this, false)
+                stopSelf()
+                return
+            }
+            if (remaining.keys != shown) {
+                getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(remaining))
+                shown = remaining.keys
+            }
+            DndController.apply(this, ModeEngine.dndWanted(remaining))
+            val fg = currentForegroundPackage(now)
+            val blocking = remaining.values.filter { mode ->
+                fg != null && fg != packageName && app.groups().filterKeys { it in mode.blockedGroups }.values.any { fg in it }
+            }
+            if (blocking.isEmpty()) overlay.hide() else overlay.show(overlayText(blocking))
+            delay(POLL_MS)
+        }
+    }
+
+    private fun currentForegroundPackage(now: Long): String? {
+        val usm = getSystemService(UsageStatsManager::class.java)
+        val events = usm.queryEvents(lastQueryMs, now)
+        val event = UsageEvents.Event()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) foregroundPackage = event.packageName
+        }
+        lastQueryMs = now
+        return foregroundPackage
+    }
+
+    private fun overlayText(modes: List<ActiveMode>): String {
+        val app = HabitTagsApp.from(this)
+        return modes.joinToString("\n") { mode ->
+            val title = app.state.value.tags[mode.tagId]?.label ?: mode.recipeId
+            mode.autoOffAt?.let { "$title is on · ends at ${TapHandler.formatTime(it)}" } ?: "$title is on"
+        }
+    }
+
+    private fun notification(active: Map<String, ActiveMode>): Notification {
+        val tags = HabitTagsApp.from(this).state.value.tags
+        val text = active.values.joinToString(", ") { tags[it.tagId]?.label ?: it.recipeId }
+        val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_tag)
+            .setContentTitle("Habit mode on")
+            .setContentText(text)
+            .setContentIntent(open)
+            .setOngoing(true)
+            .build()
+    }
+
+    private fun createChannel() {
+        getSystemService(NotificationManager::class.java)
+            .createNotificationChannel(NotificationChannel(CHANNEL_ID, "Active modes", NotificationManager.IMPORTANCE_LOW))
+    }
+
+    override fun onDestroy() {
+        overlay.hide()
+        super.onDestroy()
+    }
+
+    companion object {
+        private const val NOTIFICATION_ID = 1
+        private const val CHANNEL_ID = "active_modes"
+        private const val POLL_MS = 1_000L
+        private const val LOOKBACK_MS = 60 * 60_000L
+    }
+}
