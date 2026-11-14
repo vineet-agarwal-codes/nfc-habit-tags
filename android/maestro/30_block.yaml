@@ -7,7 +7,7 @@ appId: com.habittags.app
     visible: "On now"
     timeout: 10000
 - launchApp:
-    appId: com.android.contacts
+    appId: com.google.android.youtube
 - extendedWaitUntil:
     visible: "Go to home screen"
     timeout: 10000

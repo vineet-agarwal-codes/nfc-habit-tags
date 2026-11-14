@@ -44,7 +44,7 @@ flow 10_first_run
 flow 20_tap_toggle
 flow 30_block
 adb shell dumpsys window windows > "$OUT/windows_30.txt"
-overlay_visible || fail "overlay not visible over Settings"
+overlay_visible || fail "overlay not visible over Contacts"
 [ "$(zen)" != "0" ] || fail "DND not on while desk mode active (zen_mode=$(zen))"
 
 adb reboot

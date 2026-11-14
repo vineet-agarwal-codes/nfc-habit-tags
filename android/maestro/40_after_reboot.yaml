@@ -1,7 +1,7 @@
-appId: com.android.contacts
+appId: com.google.android.youtube
 ---
 - launchApp:
-    appId: com.android.contacts
+    appId: com.google.android.youtube
 - extendedWaitUntil:
     visible: "Go to home screen"
     timeout: 15000
