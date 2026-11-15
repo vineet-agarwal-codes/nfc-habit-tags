@@ -84,6 +84,10 @@ adb wait-for-device
 until [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; do sleep 2; done
 sleep 20
 flow 40_after_reboot
+# YouTube is done with; left running it can pop its own "new version available" screen over the
+# app mid-flow (seen in CI), which the active mode then covers with the block overlay.
+adb shell am force-stop com.google.android.youtube
+adb shell cmd appops set com.google.android.youtube RUN_ANY_IN_BACKGROUND ignore
 
 # An app update kills the service; it must come back on its own.
 adb install -r -g app/build/outputs/apk/debug/app-debug.apk
