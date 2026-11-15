@@ -115,6 +115,9 @@ sleep 3
 [ "$(zen)" != "0" ] || fail "user's own DND was turned off when the mode ended (zen_mode=$(zen))"
 adb shell cmd notification set_dnd off
 flow 90_uninstall
+flow 95_manual_start
+adb shell dumpsys activity services $PKG > "$OUT/services_after_manual.txt"
+grep -q "BlockService" "$OUT/services_after_manual.txt" && fail "BlockService still running after manual mode auto-off"
 
 adb logcat -d > "$OUT/logcat.txt"
 mv ./*.png maestro/*.png "$OUT/" 2>/dev/null || true

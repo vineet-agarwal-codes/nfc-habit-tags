@@ -40,7 +40,7 @@ fun ActiveModeStrip(onEndNow: (String) -> Unit) {
         if (state.active.isEmpty()) return@Column
         Text("On now", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
         state.active.values.forEach { mode ->
-            val label = state.tags[mode.tagId]?.label ?: mode.recipeId
+            val label = context.app().modeLabel(mode)
             val strictLeft = mode.strictUntil?.takeIf { it > now }?.let { TapHandler.minutesLeft(it - now) }
             val detail = when {
                 strictLeft != null -> " · strict, $strictLeft min left"

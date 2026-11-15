@@ -92,14 +92,14 @@ class BlockService : LifecycleService() {
     private fun overlayText(modes: List<ActiveMode>): String {
         val app = HabitTagsApp.from(this)
         return modes.joinToString("\n") { mode ->
-            val title = app.state.value.tags[mode.tagId]?.label ?: mode.recipeId
+            val title = app.modeLabel(mode)
             mode.autoOffAt?.let { "$title is on · ends at ${TapHandler.formatTime(it)}" } ?: "$title is on"
         }
     }
 
     private fun notification(active: Map<String, ActiveMode>): Notification {
-        val tags = HabitTagsApp.from(this).state.value.tags
-        val text = active.values.joinToString(", ") { tags[it.tagId]?.label ?: it.recipeId }
+        val app = HabitTagsApp.from(this)
+        val text = active.values.joinToString(", ") { app.modeLabel(it) }
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_tag)

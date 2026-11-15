@@ -7,13 +7,17 @@ import com.habittags.app.block.BlockController
 import com.habittags.app.block.ModeExpiry
 import com.habittags.app.effects.EffectRunner
 import com.habittags.app.ui.MainActivity
+import com.habittags.core.mode.InstalledTag
 import com.habittags.core.mode.ModeEngine
 import com.habittags.core.mode.TapResult
+import com.habittags.core.recipe.Recipe
 import com.habittags.core.store.TapLogEntry
+import com.habittags.core.store.manualTag
 import java.time.Instant
 import java.time.ZoneId
-import kotlinx.datetime.Clock
 import java.time.format.DateTimeFormatter
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
 
 private const val MAX_LOG = 500
 
@@ -24,44 +28,63 @@ object TapHandler {
         val state = app.state.value
         val tag = state.tags[tagId]
         val recipe = tag?.let { app.recipe(it.recipeId) }
-        val result = ModeEngine.onTap(state.active, tag, recipe, Clock.System.now(), groups = app.groups())
+        val now = Clock.System.now()
+        val result = ModeEngine.onTap(state.active, tag, recipe, now, groups = app.groups())
+        if (tag == null) {
+            context.startActivity(
+                Intent(context, MainActivity::class.java)
+                    .putExtra(MainActivity.EXTRA_SETUP_TAG_ID, tagId)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            )
+            return result
+        }
+        apply(context, tag, recipe, ModeEngine.modeKey(state.active, tag, now.toEpochMilliseconds()), result, "tag")
+        return result
+    }
 
-        if (tag != null && result != TapResult.RecipeUnavailable) {
-            val entry = TapLogEntry(System.currentTimeMillis(), tagId, tag.label, tag.recipeId, kotlinx.datetime.TimeZone.currentSystemDefault().id)
+    /** Starts (or runs) an installed recipe without its tag, exactly as a tap on its first tag would. */
+    fun startManually(context: Context, recipeId: String): TapResult {
+        val app = HabitTagsApp.from(context)
+        ModeExpiry.expireNow(context)
+        val state = app.state.value
+        val recipe = app.recipe(recipeId)
+        val tag = state.manualTag(recipeId, recipe?.title ?: recipeId)
+        val result = ModeEngine.startManually(state.active, tag, recipe, Clock.System.now(), groups = app.groups())
+        apply(context, tag, recipe, tag.tagId, result, "app")
+        return result
+    }
+
+    private fun apply(context: Context, tag: InstalledTag, recipe: Recipe?, key: String, result: TapResult, source: String) {
+        val app = HabitTagsApp.from(context)
+        if (result != TapResult.RecipeUnavailable && result != TapResult.AlreadyOn) {
+            val entry = TapLogEntry(System.currentTimeMillis(), tag.tagId, tag.label, tag.recipeId, TimeZone.currentSystemDefault().id, source)
             app.update { it.copy(tapLog = (it.tapLog + entry).takeLast(MAX_LOG)) }
         }
-        val title = tag?.label.orEmpty()
+        val title = tag.label
         val message = when (result) {
-            TapResult.UnknownTag -> {
-                context.startActivity(
-                    Intent(context, MainActivity::class.java)
-                        .putExtra(MainActivity.EXTRA_SETUP_TAG_ID, tagId)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-                )
-                null
-            }
-            TapResult.RecipeUnavailable -> "This tag's recipe isn't available on this phone"
+            TapResult.UnknownTag -> null
+            TapResult.RecipeUnavailable -> "This recipe isn't available on this phone"
+            TapResult.AlreadyOn -> "$title is already on"
             is TapResult.Started -> {
-                val mode = result.state.getValue(tagId)
-                app.update { it.copy(active = it.active + (tagId to mode)) }
-                EffectRunner.run(context, result.effects, recipe, tag?.params.orEmpty())
-                val off = result.state.getValue(tagId).autoOffAt
+                val mode = result.state.getValue(key)
+                app.update { it.copy(active = it.active + (key to mode)) }
+                EffectRunner.run(context, result.effects, recipe, tag.params)
+                val off = mode.autoOffAt
                 if (off == null) "$title on" else "$title on · off at ${formatTime(off)}"
             }
             is TapResult.Ended -> {
-                app.update { it.copy(active = it.active - tagId) }
-                EffectRunner.run(context, result.effects, recipe, tag?.params.orEmpty())
+                app.update { it.copy(active = it.active - key) }
+                EffectRunner.run(context, result.effects, recipe, tag.params)
                 "$title off"
             }
             is TapResult.StrictRefused -> "Strict mode: ${minutesLeft(result.remainingMs)} min left"
             is TapResult.Ran -> {
-                EffectRunner.run(context, result.effects, recipe, tag?.params.orEmpty())
+                EffectRunner.run(context, result.effects, recipe, tag.params)
                 title
             }
         }
         BlockController.sync(context)
         message?.let { Toast.makeText(context.applicationContext, it, Toast.LENGTH_LONG).show() }
-        return result
     }
 
     fun minutesLeft(ms: Long): Long = (ms + 59_999) / 60_000

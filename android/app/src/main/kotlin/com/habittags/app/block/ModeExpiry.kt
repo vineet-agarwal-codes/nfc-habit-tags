@@ -8,6 +8,7 @@ import android.content.Intent
 import com.habittags.app.HabitTagsApp
 import com.habittags.app.effects.EffectRunner
 import com.habittags.core.mode.ModeEngine
+import com.habittags.core.store.paramsFor
 
 object ModeExpiry {
     /** Ends modes whose auto-off time has passed and runs their end actions. */
@@ -19,7 +20,7 @@ object ModeExpiry {
         app.update { it.copy(active = remaining) }
         for (mode in active.values - remaining.values.toSet()) {
             val recipe = app.recipe(mode.recipeId)
-            EffectRunner.run(context, recipe?.endActions.orEmpty(), recipe, app.state.value.tags[mode.tagId]?.params.orEmpty())
+            EffectRunner.run(context, recipe?.endActions.orEmpty(), recipe, app.state.value.paramsFor(mode.tagId, mode.recipeId))
         }
     }
 

@@ -46,6 +46,7 @@ fun InstallScreen(recipeId: String, setupTagId: String?, onDone: () -> Unit) {
             it.copy(
                 tags = it.tags + (tagId to InstalledTag(tagId, recipe.id, label.ifBlank { recipe.title }, params.toMap())),
                 installedRecipes = it.installedRecipes + recipe.id,
+                recipeParams = it.recipeParams + (recipe.id to params.toMap()),
             )
         }
         onDone()
@@ -69,7 +70,7 @@ fun InstallScreen(recipeId: String, setupTagId: String?, onDone: () -> Unit) {
             Text("NTAG213, 215 or 216 tags work best.", style = MaterialTheme.typography.bodySmall)
             Button(onClick = { writingTagId = TagPayload.newTagId() }, enabled = ready, modifier = Modifier.fillMaxWidth()) { Text("Write to a tag") }
             TextButton(onClick = {
-                app.update { it.copy(installedRecipes = it.installedRecipes + recipe.id) }
+                app.update { it.copy(installedRecipes = it.installedRecipes + recipe.id, recipeParams = it.recipeParams + (recipe.id to params.toMap())) }
                 onDone()
             }, modifier = Modifier.fillMaxWidth()) { Text("Skip for now") }
         }

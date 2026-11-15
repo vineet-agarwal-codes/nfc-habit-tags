@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.habittags.app.block.BlockController
 import com.habittags.core.mode.InstalledTag
 import com.habittags.core.recipe.BlockGroups
+import com.habittags.core.recipe.isUsable
 import com.habittags.core.tag.TagPayload
 
 /** Settings for an installed recipe; slider changes apply to every tag of this recipe on the next tap. */
@@ -37,22 +38,26 @@ fun RecipeEditScreen(recipeId: String, onOpenTag: (String) -> Unit, onInstallFlo
     val state by app.state.collectAsState()
     val recipe = snapshot.catalog.recipes.firstOrNull { it.id == recipeId } ?: return
     val tags = state.tags.values.filter { it.recipeId == recipeId }.sortedBy { it.label }
-    val running = tags.any { it.tagId in state.active }
+    val running = state.active.values.any { it.recipeId == recipeId }
     var writingTagId by remember { mutableStateOf<String?>(null) }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(recipe.title, style = MaterialTheme.typography.headlineSmall)
         if (snapshot.meta[recipeId]?.retired == true) Text("No longer offered", style = MaterialTheme.typography.labelLarge)
-        tags.firstOrNull()?.let { first ->
-            recipe.params.forEach { spec ->
-                ParamSlider(spec, (first.params[spec.key] ?: spec.default).coerceIn(spec.min, spec.max)) { v ->
-                    app.update { s ->
-                        s.copy(tags = s.tags.mapValues { (_, t) -> if (t.recipeId == recipeId) t.copy(params = t.params + (spec.key to v)) else t })
-                    }
+        if (running) Text("On now", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+        else if (isUsable(recipe)) StartNowButton(recipe)
+        val current = tags.firstOrNull()?.params ?: state.recipeParams[recipeId].orEmpty()
+        recipe.params.forEach { spec ->
+            ParamSlider(spec, (current[spec.key] ?: spec.default).coerceIn(spec.min, spec.max)) { v ->
+                app.update { s ->
+                    s.copy(
+                        tags = s.tags.mapValues { (_, t) -> if (t.recipeId == recipeId) t.copy(params = t.params + (spec.key to v)) else t },
+                        recipeParams = s.recipeParams + (recipeId to (s.recipeParams[recipeId].orEmpty() + (spec.key to v))),
+                    )
                 }
             }
-            if (recipe.params.isNotEmpty()) Text("Changes apply on your next tap. Tags don't need rewriting.", style = MaterialTheme.typography.bodySmall)
         }
+        if (recipe.params.isNotEmpty()) Text("Changes apply the next time it starts. Tags don't need rewriting.", style = MaterialTheme.typography.bodySmall)
 
         val groups = recipe.rules.flatMap { it.actions }.filterIsInstance<BlockGroups>().flatMap { it.groups }.distinct()
         if (groups.isNotEmpty()) {
@@ -75,7 +80,11 @@ fun RecipeEditScreen(recipeId: String, onOpenTag: (String) -> Unit, onInstallFlo
         if (running) Text("Turn this mode off first", color = MaterialTheme.colorScheme.error)
         OutlinedButton(enabled = !running, modifier = Modifier.fillMaxWidth(), onClick = {
             app.update { s ->
-                s.copy(installedRecipes = s.installedRecipes - recipeId, tags = s.tags.filterValues { it.recipeId != recipeId })
+                s.copy(
+                    installedRecipes = s.installedRecipes - recipeId,
+                    tags = s.tags.filterValues { it.recipeId != recipeId },
+                    recipeParams = s.recipeParams - recipeId,
+                )
             }
             BlockController.sync(context)
             onUninstalled()
@@ -84,7 +93,7 @@ fun RecipeEditScreen(recipeId: String, onOpenTag: (String) -> Unit, onInstallFlo
 
     writingTagId?.let { id ->
         TagWriteDialog(id, onWritten = {
-            val params = tags.firstOrNull()?.params.orEmpty()
+            val params = tags.firstOrNull()?.params ?: state.recipeParams[recipeId].orEmpty()
             app.update { s -> s.copy(tags = s.tags + (id to InstalledTag(id, recipeId, "${recipe.title} ${tags.size + 1}", params))) }
             writingTagId = null
         }, onCancel = { writingTagId = null })

@@ -10,6 +10,7 @@ import com.habittags.app.backend.CatalogRepository
 import com.habittags.app.backend.RealtimeWatcher
 import com.habittags.app.backend.UsageReporting
 import com.habittags.core.catalog.CatalogSnapshot
+import com.habittags.core.mode.ActiveMode
 import com.habittags.core.realtime.Realtime
 import com.habittags.core.recipe.Catalog
 import com.habittags.core.recipe.Recipe
@@ -17,6 +18,8 @@ import com.habittags.core.recipe.isUsable
 import com.habittags.core.store.AppState
 import com.habittags.core.store.withDeviceId
 import com.habittags.core.usage.reportDue
+import java.io.File
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,8 +31,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
-import java.io.File
-import java.util.UUID
 
 class HabitTagsApp : Application() {
     private lateinit var store: StateStore
@@ -82,6 +83,10 @@ class HabitTagsApp : Application() {
     fun catalogNow(): Catalog = catalogRepository.snapshot.value.catalog
 
     fun recipe(id: String): Recipe? = catalogNow().recipes.firstOrNull { it.id == id }?.takeIf(::isUsable)
+
+    /** A running mode's name: its tag's label, or the recipe title when it was started from the app. */
+    fun modeLabel(mode: ActiveMode): String =
+        _state.value.tags[mode.tagId]?.label ?: catalogNow().recipes.firstOrNull { it.id == mode.recipeId }?.title ?: mode.recipeId
 
     fun groups(): Map<String, Set<String>> {
         val overrides = _state.value.groupOverrides

@@ -37,7 +37,7 @@ fun GateScreen(tagId: String, onDone: () -> Unit) {
     val passage = remember { FrictionGate.passage(Random.Default, DebugSettings.gateWords(context) ?: FrictionGate.TARGET_WORDS) }
     var matched by remember { mutableIntStateOf(0) }
     var rejected by remember { mutableStateOf(false) }
-    val label = state.tags[tagId]?.label ?: "This mode"
+    val label = state.active[tagId]?.let(app::modeLabel) ?: "This mode"
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         if (tagId !in state.active) {

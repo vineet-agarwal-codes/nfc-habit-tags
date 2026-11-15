@@ -49,7 +49,7 @@ fun TagDetailScreen(tagId: String, onDone: () -> Unit) {
         }
         Text("Changes apply on your next tap. The tag itself doesn't need rewriting.", style = MaterialTheme.typography.bodySmall)
 
-        val running = tagId in state.active
+        val running = state.active.values.any { it.recipeId == tag.recipeId }
         if (running) Text("This mode is on. End it before switching recipe or removing the tag.", color = MaterialTheme.colorScheme.error)
         OutlinedButton(onClick = { choosing = true }, enabled = !running, modifier = Modifier.fillMaxWidth()) { Text("Switch recipe") }
         DropdownMenu(expanded = choosing, onDismissRequest = { choosing = false }) {
