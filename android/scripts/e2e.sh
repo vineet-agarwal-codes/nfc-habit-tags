@@ -116,11 +116,13 @@ sleep 3
 adb shell cmd notification set_dnd off
 flow 90_uninstall
 flow 95_manual_start
-flow 97_bed_hours
 adb shell dumpsys activity services $PKG > "$OUT/services_after_manual.txt"
 grep -q "BlockService" "$OUT/services_after_manual.txt" && fail "BlockService still running after manual mode auto-off"
+flow 97_bed_hours
 
 adb logcat -d > "$OUT/logcat.txt"
-mv ./*.png maestro/*.png "$OUT/" 2>/dev/null || true
+# Screenshot locations differ between Maestro versions; collect them wherever they landed.
+mkdir -p "$OUT/screenshots"
+find . "$HOME/.maestro" -name "*.png" -not -path "./build/e2e/*" -newer "$OUT/launcher_apps.txt" -exec cp {} "$OUT/screenshots/" \; 2>/dev/null || true
 cp -r "$HOME/.maestro/tests" "$OUT/maestro-tests" 2>/dev/null || true
 exit $status
