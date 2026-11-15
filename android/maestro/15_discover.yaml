@@ -14,7 +14,8 @@ appId: com.habittags.app
     below: "Gym Bag: Workout"
 - assertVisible: "Used by 30 people this week"
 - scrollUntilVisible:
-    element: "Front Door: Leaving Home"
+    element: "New"
+    centerElement: true
 - assertVisible:
     text: "New"
     below: "Front Door: Leaving Home"

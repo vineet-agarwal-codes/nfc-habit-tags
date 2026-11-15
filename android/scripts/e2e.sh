@@ -113,5 +113,6 @@ adb shell cmd notification set_dnd off
 flow 90_uninstall
 
 adb logcat -d > "$OUT/logcat.txt"
-mv ./*.png "$OUT/" 2>/dev/null || true
+mv ./*.png maestro/*.png "$OUT/" 2>/dev/null || true
+cp -r "$HOME/.maestro/tests" "$OUT/maestro-tests" 2>/dev/null || true
 exit $status
