@@ -12,4 +12,12 @@ object DebugSettings {
     fun setGateWords(context: Context, words: Int) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putInt("gateWords", words).commit()
     }
+
+    /** "real" (default), "fixture" or "offline"; see BackendFactory. */
+    fun backendMode(context: Context): String =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("backend", "real") ?: "real"
+
+    fun setBackendMode(context: Context, mode: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("backend", mode).commit()
+    }
 }

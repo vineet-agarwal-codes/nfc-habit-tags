@@ -1,0 +1,219 @@
+[
+ {
+  "id": "desk-deep-work",
+  "doc": {
+   "id": "desk-deep-work",
+   "schemaVersion": 1,
+   "version": 1,
+   "title": "Desk: Deep Work",
+   "description": "Tap when you sit down to work. Social media and video apps are blocked and notifications go quiet until you tap again or the timer ends.",
+   "placementHint": "Stick it on your desk where your phone rests, or under the desk edge.",
+   "mode": "toggle",
+   "params": [
+    {
+     "key": "autoOffMinutes",
+     "type": "duration",
+     "label": "Turn off automatically after",
+     "default": 90,
+     "min": 15,
+     "max": 480
+    },
+    {
+     "key": "strictMinutes",
+     "type": "duration",
+     "label": "Can't turn off with the tag for",
+     "default": 0,
+     "min": 0,
+     "max": 240
+    }
+   ],
+   "autoOffMinutes": "{{autoOffMinutes}}",
+   "strictMinutes": "{{strictMinutes}}",
+   "rules": [
+    {
+     "actions": [
+      {
+       "type": "blockGroups",
+       "groups": [
+        "social",
+        "video"
+       ]
+      },
+      {
+       "type": "dnd"
+      }
+     ]
+    }
+   ]
+  },
+  "published_at": "2026-11-01T00:00:00+00:00",
+  "sort_hint": 0
+ },
+ {
+  "id": "bed-sleep",
+  "doc": {
+   "id": "bed-sleep",
+   "schemaVersion": 1,
+   "version": 1,
+   "title": "Bed: Sleep Mode",
+   "description": "Tap at night to block distracting apps and silence notifications. Tap again in the morning to end sleep mode and start your morning routine.",
+   "placementHint": "Stick it on your bedside table where your phone stays overnight.",
+   "mode": "toggle",
+   "params": [
+    {
+     "key": "autoOffMinutes",
+     "type": "duration",
+     "label": "Wake up mode starts after",
+     "default": 480,
+     "min": 240,
+     "max": 720
+    },
+    {
+     "key": "strictMinutes",
+     "type": "duration",
+     "label": "Can't turn off with the tag for",
+     "default": 0,
+     "min": 0,
+     "max": 480
+    }
+   ],
+   "autoOffMinutes": "{{autoOffMinutes}}",
+   "strictMinutes": "{{strictMinutes}}",
+   "rules": [
+    {
+     "when": {
+      "time": "21:00-05:00"
+     },
+     "actions": [
+      {
+       "type": "blockGroups",
+       "groups": [
+        "social",
+        "video",
+        "games"
+       ]
+      },
+      {
+       "type": "dnd"
+      }
+     ]
+    },
+    {
+     "actions": [
+      {
+       "type": "log",
+       "label": "Bed tap outside night hours"
+      }
+     ]
+    }
+   ],
+   "endActions": [
+    {
+     "type": "checklist",
+     "title": "Good morning",
+     "items": [
+      "Drink a glass of water",
+      "Make the bed",
+      "Put on workout clothes"
+     ]
+    }
+   ]
+  },
+  "published_at": "2026-11-01T00:00:00+00:00",
+  "sort_hint": 10
+ },
+ {
+  "id": "gym-bag",
+  "doc": {
+   "id": "gym-bag",
+   "schemaVersion": 1,
+   "version": 1,
+   "title": "Gym Bag: Workout",
+   "description": "Tap when you pick up your gym bag. Starts a one hour workout timer and logs the workout.",
+   "placementHint": "Stick it inside your gym bag or on its strap.",
+   "mode": "oneShot",
+   "rules": [
+    {
+     "actions": [
+      {
+       "type": "timer",
+       "minutes": 60
+      },
+      {
+       "type": "log",
+       "label": "Workout"
+      },
+      {
+       "type": "checklist",
+       "title": "Before you go",
+       "items": [
+        "Water bottle",
+        "Headphones",
+        "Towel"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "published_at": "2026-11-01T00:00:00+00:00",
+  "sort_hint": 20
+ },
+ {
+  "id": "front-door",
+  "doc": {
+   "id": "front-door",
+   "schemaVersion": 1,
+   "version": 1,
+   "title": "Front Door: Leaving Home",
+   "description": "Tap on your way out for a quick checklist so you never forget the essentials.",
+   "placementHint": "Stick it next to the door handle or on the key bowl.",
+   "mode": "oneShot",
+   "rules": [
+    {
+     "actions": [
+      {
+       "type": "checklist",
+       "title": "Leaving home",
+       "items": [
+        "Keys",
+        "Wallet",
+        "Phone charger",
+        "Lights off"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "published_at": "2026-11-01T00:00:00+00:00",
+  "sort_hint": 30
+ },
+ {
+  "id": "new-recipe-a",
+  "doc": {
+   "id": "new-recipe-a",
+   "schemaVersion": 1,
+   "version": 1,
+   "title": "Plant: Water me",
+   "description": "Tap when you water your plants.",
+   "placementHint": "Stick it on the watering can",
+   "mode": "oneShot",
+   "rules": [
+    {
+     "actions": [
+      {
+       "type": "checklist",
+       "title": "Plants",
+       "items": [
+        "Water the plants"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "published_at": "RECENT",
+  "sort_hint": 100
+ }
+]

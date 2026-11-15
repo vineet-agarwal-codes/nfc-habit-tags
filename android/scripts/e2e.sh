@@ -44,8 +44,22 @@ grep -q "OK (" "$OUT/instrumented.txt" || fail "instrumented tests"
 
 grant
 adb shell cmd package query-activities -a android.intent.action.MAIN -c android.intent.category.LAUNCHER | grep "packageName=" | sort -u > "$OUT/launcher_apps.txt"
+debug_link() { adb shell am start -W -a android.intent.action.VIEW -d "habittags-debug://$1" $PKG > /dev/null; }
+
+# CI never talks to the production backend: fixture recipes/stats, reports written to a local file.
+debug_link backend/fixture
 flow 10_first_run
 flow 20_tap_toggle
+
+debug_link report-now
+adb shell run-as $PKG cat files/debug_reports.jsonl > "$OUT/debug_reports.jsonl" || true
+node -e '
+  const lines = require("fs").readFileSync(process.argv[1], "utf8").trim().split("\n").filter(Boolean);
+  const events = lines.flatMap((l) => JSON.parse(l).events);
+  const snap = events.find((e) => e.type === "installed_snapshot" && e.payload.recipes.includes("desk-deep-work"));
+  const taps = events.find((e) => e.type === "tap_count" && e.payload.recipe === "desk-deep-work" && e.payload.count >= 2 && e.tz);
+  process.exit(snap && taps ? 0 : 1);
+' "$OUT/debug_reports.jsonl" || fail "usage report missing installed_snapshot or tap_count for desk-deep-work"
 flow 30_block
 overlay_visible || fail "overlay not visible over YouTube"
 adb shell dumpsys alarm > "$OUT/alarms_30.txt"

@@ -15,6 +15,8 @@ android {
         targetSdk = 35
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toInt() ?: 1
         versionName = "0.1.0"
+        buildConfigField("String", "SUPABASE_URL", "\"https://bfwyytbghnfwnikpcugx.supabase.co\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"sb_publishable_eKASnJMTC64q14v01LMnEQ_IgEQVup8\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -57,6 +59,9 @@ dependencies {
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.lifecycle.service)
     implementation(libs.coroutines.android)
+    implementation(libs.okhttp)
+    implementation(libs.work.runtime)
+    implementation(libs.lifecycle.process)
 
     testImplementation(libs.junit4)
     androidTestImplementation(libs.androidx.test.runner)

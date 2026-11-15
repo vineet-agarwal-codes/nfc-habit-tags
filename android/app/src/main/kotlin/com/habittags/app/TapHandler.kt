@@ -27,7 +27,7 @@ object TapHandler {
         val result = ModeEngine.onTap(state.active, tag, recipe, Clock.System.now(), groups = app.groups())
 
         if (tag != null && result != TapResult.RecipeUnavailable) {
-            val entry = TapLogEntry(System.currentTimeMillis(), tagId, tag.label)
+            val entry = TapLogEntry(System.currentTimeMillis(), tagId, tag.label, tag.recipeId, kotlinx.datetime.TimeZone.currentSystemDefault().id)
             app.update { it.copy(tapLog = (it.tapLog + entry).takeLast(MAX_LOG)) }
         }
         val title = tag?.label.orEmpty()

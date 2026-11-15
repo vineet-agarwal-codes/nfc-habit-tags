@@ -41,7 +41,12 @@ fun InstallScreen(recipeId: String, setupTagId: String?, onDone: () -> Unit) {
     LaunchedEffect(Unit) { if (Build.VERSION.SDK_INT >= 33) notifications.launch(Manifest.permission.POST_NOTIFICATIONS) }
 
     fun save(tagId: String) {
-        app.update { it.copy(tags = it.tags + (tagId to InstalledTag(tagId, recipe.id, label.ifBlank { recipe.title }, params.toMap()))) }
+        app.update {
+            it.copy(
+                tags = it.tags + (tagId to InstalledTag(tagId, recipe.id, label.ifBlank { recipe.title }, params.toMap())),
+                installedRecipes = it.installedRecipes + recipe.id,
+            )
+        }
         onDone()
     }
 

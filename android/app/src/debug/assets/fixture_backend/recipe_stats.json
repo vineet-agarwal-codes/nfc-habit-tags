@@ -1,0 +1,22 @@
+[
+ {
+  "recipe_id": "gym-bag",
+  "weekly_active": 40,
+  "installs": 100
+ },
+ {
+  "recipe_id": "bed-sleep",
+  "weekly_active": 30,
+  "installs": 500
+ },
+ {
+  "recipe_id": "desk-deep-work",
+  "weekly_active": 12,
+  "installs": 80
+ },
+ {
+  "recipe_id": "front-door",
+  "weekly_active": 3,
+  "installs": 3
+ }
+]

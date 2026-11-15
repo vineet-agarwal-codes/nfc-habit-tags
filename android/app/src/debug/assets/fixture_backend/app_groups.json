@@ -1,0 +1,49 @@
+[
+ {
+  "id": "social",
+  "doc": {
+   "id": "social",
+   "title": "Social media",
+   "androidPackages": [
+    "com.instagram.android",
+    "com.facebook.katana",
+    "com.twitter.android",
+    "com.snapchat.android",
+    "in.mohalla.sharechat",
+    "com.reddit.frontpage"
+   ]
+  }
+ },
+ {
+  "id": "video",
+  "doc": {
+   "id": "video",
+   "title": "Video and streaming",
+   "androidPackages": [
+    "com.google.android.youtube",
+    "com.netflix.mediaclient",
+    "in.startv.hotstar",
+    "com.amazon.avod.thirdpartyclient"
+   ]
+  }
+ },
+ {
+  "id": "messaging",
+  "doc": {
+   "id": "messaging",
+   "title": "Messaging",
+   "androidPackages": [
+    "com.whatsapp",
+    "org.telegram.messenger"
+   ]
+  }
+ },
+ {
+  "id": "games",
+  "doc": {
+   "id": "games",
+   "title": "Games",
+   "androidPackages": []
+  }
+ }
+]
