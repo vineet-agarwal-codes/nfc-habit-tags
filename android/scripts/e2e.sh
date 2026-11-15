@@ -127,7 +127,7 @@ flow 97_bed_hours
 adb logcat -d > "$OUT/logcat.txt"
 # Screenshot locations differ between Maestro versions; collect them wherever they landed.
 mkdir -p "$OUT/screenshots"
-find / -xdev -name "*.png" -newer "$OUT/launcher_apps.txt" -not -path "*/build/e2e/*" 2>/dev/null > "$OUT/png_paths.txt"
+find / \( -path /proc -o -path /sys -o -path /dev \) -prune -o -name "*.png" -newer "$OUT/launcher_apps.txt" -not -path "*/build/e2e/*" -print 2>/dev/null > "$OUT/png_paths.txt"
 while read -r f; do cp "$f" "$OUT/screenshots/" 2>/dev/null; done < "$OUT/png_paths.txt"
 cp -r "$HOME/.maestro/tests" "$OUT/maestro-tests" 2>/dev/null || true
 exit $status
