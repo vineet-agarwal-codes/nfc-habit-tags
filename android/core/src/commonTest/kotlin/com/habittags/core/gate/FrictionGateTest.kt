@@ -41,6 +41,25 @@ class FrictionGateTest {
     }
 
     @Test
+    fun typoAndWordsTyped() {
+        val target = "the cat sat"
+        val cases = listOf(
+            // typed, hasTypo, wordsTyped
+            Triple("", false, 0),
+            Triple("the", false, 0),
+            Triple("the ", false, 1),
+            Triple("The cat", false, 1),
+            Triple("the cax", true, 1),
+            Triple("the cat sat", false, 3),
+        )
+        for ((typed, typo, words) in cases) {
+            assertEquals(typo, FrictionGate.hasTypo(typed, target), "typo: '$typed'")
+            assertEquals(words, FrictionGate.wordsTyped(typed, target), "words: '$typed'")
+        }
+        assertEquals(3, FrictionGate.wordCount(target))
+    }
+
+    @Test
     fun enoughSentences() {
         assertTrue(GATE_SENTENCES.size >= 80)
     }

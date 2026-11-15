@@ -25,5 +25,22 @@ object FrictionGate {
 
     fun isComplete(typed: String, target: String): Boolean = normalize(typed) == normalize(target)
 
+    /** Characters of the target typed correctly so far, counting a just-typed trailing space. */
+    fun matchedLength(typed: String, target: String): Int =
+        normalizeTyping(typed).zip(normalize(target)).takeWhile { (a, b) -> a == b }.size
+
+    fun hasTypo(typed: String, target: String): Boolean = normalizeTyping(typed).length > matchedLength(typed, target)
+
+    /** Whole words finished: each followed by a typed space, or the last word once the passage is complete. */
+    fun wordsTyped(typed: String, target: String): Int {
+        val t = normalize(target)
+        val m = matchedLength(typed, target)
+        return t.take(m).count { it == ' ' } + if (m == t.length && m > 0) 1 else 0
+    }
+
+    fun wordCount(target: String): Int = normalize(target).split(' ').count { it.isNotEmpty() }
+
     private fun normalize(s: String) = s.lowercase().trim().replace(Regex("\\s+"), " ")
+
+    private fun normalizeTyping(s: String) = s.lowercase().replace(Regex("\\s+"), " ").trimStart()
 }

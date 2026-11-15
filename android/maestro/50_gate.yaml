@@ -5,7 +5,15 @@ appId: com.habittags.app
     stopApp: false
 - tapOn: "End now"
 - assertVisible: "End Desk: Deep Work early?"
+- assertVisible: "0 of 5 words"
 - takeScreenshot: gate
+- tapOn:
+    id: "gate-input"
+    optional: true
+- inputText: "x"
+- assertVisible: "Typo — press backspace and fix the highlighted letter."
+- takeScreenshot: gate_typo
+- eraseText: 1
 - back
 - back
 - openLink: "habittags-debug://tap/last"
