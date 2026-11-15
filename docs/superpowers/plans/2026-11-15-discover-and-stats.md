@@ -161,12 +161,14 @@ android/app/src/debug/assets/fixture_backend/{recipes,app_groups,recipe_stats}.j
 
 **Files:**
 - Modify: `android/core/src/commonMain/kotlin/com/habittags/core/store/StateStore.kt`
+- Create: `android/core/src/commonMain/kotlin/com/habittags/core/usage/UsageEvents.kt` (model only)
 - Test: `android/core/src/commonTest/kotlin/com/habittags/core/store/StateCodecTest.kt`
 
 **Interfaces:**
 - Produces:
   - `TapLogEntry(atMs: Long, tagId: String, label: String, recipeId: String? = null)` — taps written by `TapHandler` set `recipeId`; `Log` action entries leave it null and are never reported.
-  - `AppState` gains: `stateVersion: Int = 2`, `installedRecipes: Set<String> = emptySet()`, `deviceId: String? = null`, `lastReportMs: Long = 0`, `pendingEvents: List<UsageEvent> = emptyList()` (`UsageEvent` from Task 5 — define Task 5's model first if implementing in order).
+  - `@Serializable data class UsageEvent(val type: String, val v: Int, val day: String?, val payload: JsonObject)` in `usage/UsageEvents.kt` (model only; Task 5 adds the builders).
+  - `AppState` gains: `stateVersion: Int = 2`, `installedRecipes: Set<String> = emptySet()`, `deviceId: String? = null`, `lastReportMs: Long = 0`, `pendingEvents: List<UsageEvent> = emptyList()`.
   - `StateCodec.decode` applies `migrate(state)`: if the decoded JSON has no `stateVersion` (v1) → `installedRecipes = tags.values.map { it.recipeId }.toSet()`, `stateVersion = 2`. Decoding treats a missing `stateVersion` as 1 (the data class default stays 2 for fresh state).
   - `fun AppState.withDeviceId(newId: () -> String): AppState` — sets `deviceId` once if null.
 
@@ -183,12 +185,11 @@ withDeviceId on null → set ; on existing → unchanged
 ### Task 5: Core — usage events and report building
 
 **Files:**
-- Create: `android/core/src/commonMain/kotlin/com/habittags/core/usage/UsageEvents.kt`
+- Modify: `android/core/src/commonMain/kotlin/com/habittags/core/usage/UsageEvents.kt`
 - Test: `android/core/src/commonTest/kotlin/com/habittags/core/usage/UsageEventsTest.kt`
 
 **Interfaces:**
 - Produces:
-  - `@Serializable data class UsageEvent(val type: String, val v: Int, val day: String?, val payload: JsonObject)`
   - `const val REPORT_INTERVAL_MS = 6 * 60 * 60 * 1000L`, `const val MAX_REPORT_DAYS = 14`
   - `fun buildReport(state: AppState, now: Instant, tz: TimeZone): List<UsageEvent>` = `state.pendingEvents` + one `installed_snapshot` (payload `{"recipes": [...sorted installedRecipes]}`, day = today) + one `tap_count` per (recipeId, local day) from `tapLog` entries with non-null `recipeId`, for days ≥ max(today − 13, local day of `lastReportMs` if > 0), count = number of entries that day (all days counted fully, so re-sends are idempotent).
   - `fun reportDue(state: AppState, nowMs: Long): Boolean` = `nowMs - state.lastReportMs >= REPORT_INTERVAL_MS`
@@ -217,12 +218,12 @@ reportDue: 5h59m → false, 6h → true
 **Interfaces:**
 - Consumes: `Catalog`, `Recipe`, `AppGroup`, `isUsable`, `CatalogJson`/`parseCatalog` internals (Task 1 of the Android MVP)
 - Produces:
-  - `@Serializable data class RecipeMeta(val publishedAt: Instant? = null, val sortHint: Int = 100)`
+  - `@Serializable data class RecipeMeta(val publishedAt: Instant? = null, val sortHint: Int = 100, val retired: Boolean = false)`
   - `@Serializable data class RecipeStats(val weeklyActive: Int, val installs: Int)`
   - `@Serializable data class CatalogSnapshot(val catalog: Catalog, val meta: Map<String, RecipeMeta> = emptyMap(), val stats: Map<String, RecipeStats> = emptyMap(), val fetchedAtMs: Long = 0)`
   - `fun decodeRemoteCatalog(recipesJson: String, groupsJson: String, statsJson: String?, fetchedAtMs: Long): CatalogSnapshot` — inputs are PostgREST arrays: recipes `[{id, doc, published_at, sort_hint}]`, groups `[{id, doc}]`, stats `[{recipe_id, weekly_active, installs}]`. Each recipe/group doc decoded independently; a doc that fails to decode is dropped. Recipes needing a newer schema are kept (so installed copies can say "Update the app"). `statsJson` null or malformed → empty stats.
-  - `fun mergeCatalog(previous: CatalogSnapshot?, fresh: CatalogSnapshot, installed: Set<String>): CatalogSnapshot` — fresh, plus any recipe in `installed` missing from fresh but present in `previous` (kept, with `meta.retired = true`… pin: add `val retired: Boolean = false` to `RecipeMeta`).
-  - `fun discoverOrder(snapshot: CatalogSnapshot, installed: Set<String>, now: Instant): List<Recipe>` — usable, not installed, not retired; boost/sort per Global Constraints.
+  - `fun mergeCatalog(previous: CatalogSnapshot?, fresh: CatalogSnapshot, installed: Set<String>): CatalogSnapshot` — fresh, plus any recipe in `installed` missing from fresh but present in `previous` (kept, with `meta[id].retired = true`).
+  - `fun discoverOrder(snapshot: CatalogSnapshot, installed: Set<String>, now: Instant): List<Recipe>` — usable, not installed, not retired; boost/sort per Global Constraints; a recipe without stats counts as 0/0; missing meta = `RecipeMeta()`.
   - `fun statLabel(stats: RecipeStats?): List<String>` — `[]` if null; else per Global Constraints (`["Used by 320 people this week", "1,240 installs"]`, `["New"]`, …).
 
 - [ ] **Step 1:** Tests:
@@ -232,8 +233,10 @@ decode: 4 valid recipes + 1 doc {"id":"bad"} (missing fields) → 4 recipes; gro
 decode: recipe with schemaVersion 2 → present, isUsable false; statsJson "oops" → stats empty
 merge: previous has desk, fresh lacks desk, installed {desk} → desk present, meta[desk].retired = true
 merge: previous has front-door, fresh lacks it, not installed → absent
-discoverOrder (now = 2026-11-15): stats gym 40/100, bed 30/500, desk 12/80, door 3/3; new1 published 2026-11-10, new2 2026-11-14, new3 2026-11-12, new4 2026-11-13, old ones 2026-11-01
-  → [new2, new4, new3, gym, bed, desk, new1?...] — pin: new1 (oldest of 4 new) falls back to normal ranking by its stats (none → after all with stats, by sortHint)
+discoverOrder (now = 2026-11-15T12:00Z): stats gym 40/100, bed 30/500, desk 12/80, door 3/3; new1..new4 have no stats and
+  published new1 2026-11-10, new2 2026-11-14, new3 2026-11-12, new4 2026-11-13; old ones 2026-11-01
+  → [new2, new4, new3, gym, bed, desk, door, new1]   // only 3 boosted; new1 ranks as 0/0
+recipe published 2026-10-31 (15 days) with no stats → not boosted
 discoverOrder excludes installed {gym} and unusable/retired recipes; all installed → empty list
 statLabel: (320, 1240) → ["Used by 320 people this week", "1,240 installs"] ; (4, 1240) → ["1,240 installs"] ; (3, 3) → ["New"] ; null → []
 ```
@@ -271,11 +274,11 @@ statLabel: (320, 1240) → ["Used by 320 people this week", "1,240 installs"] ; 
   - `RealtimeWatcher`: connects on `ON_START` (if `supportsRealtime`), closes on `ON_STOP`; heartbeat every `Realtime.HEARTBEAT_MS`; reconnect with backoff 2 s → 60 s; `isCatalogChange` → `CatalogRepository.refresh()`.
   - `UsageReportWorker` (`CoroutineWorker`): `buildReport(state, now, TimeZone.currentSystemDefault())` → `backend.report` → `afterReportSent`; failure → `Result.retry()`. Enqueued as unique periodic work `usage-report` every 6 h (`NetworkType.CONNECTED`) at app start, plus unique one-time work `usage-report-now` on `ON_START` when `reportDue`.
   - Debug links: `habittags-debug://backend/<real|fixture|offline>`, `habittags-debug://report-now` (runs the report inline).
-  - Fixture data: the 4 seed recipes + `new-recipe-a` (published 2 days before the build's fixed fixture "now"? — pin: `published_at` = `"{{RECENT}}"` replaced at load with now − 2 days) and stats gym 40/100, bed 30/500, desk 12/80, door 3/3.
+  - Fixture data: the 4 seed recipes + `new-recipe-a` ("Plant: Water me", oneShot checklist) whose `published_at` is the literal `"RECENT"`, replaced at load with now − 2 days so the boost always applies; stats gym 40/100, bed 30/500, desk 12/80, door 3/3.
 
 - [ ] **Step 1:** Implement; push; CI green (`gh run watch --exit-status` in background).
 - [ ] **Step 2:** e2e additions in `scripts/e2e.sh` (fixture mode set before the first flow): after `20_tap_toggle`, open `report-now`, then `adb shell run-as com.habittags.app cat files/debug_reports.jsonl` must contain an `installed_snapshot` with `desk-deep-work` and a `tap_count` for `desk-deep-work` with `count` ≥ 2. Offline case: clear app data, set `offline`, launch → Discover shows the 4 bundled recipes with no "Used by" text (Maestro `05_offline.yaml`), `report-now` leaves `debug_reports.jsonl` absent; switch to `fixture`, `report-now` → file present.
-- [ ] **Step 3: Production smoke (VM, not CI):** `backend/scripts/sql.sh` is not needed — call the RPC with curl and the publishable key as device `00000000-0000-0000-0000-000000000001` with one `installed_snapshot` and one `tap_count`; expect `1`/`2` returned and `recipe_stats` unchanged for real counts. Commit.
+- [ ] **Step 3: Production smoke (VM, not CI):** curl `POST $SUPABASE_URL/rest/v1/rpc/report_events` with the publishable key as device `00000000-0000-0000-0000-000000000001`, one `installed_snapshot` and one `tap_count` → response `2`; after a manual `refresh materialized view recipe_stats` (via `sql.sh`) the real counts are unchanged (test device excluded). Commit.
 
 ### Task 9: Android UI — Discover, My recipes, recipe flows, strip, setup picker
 
@@ -291,7 +294,7 @@ statLabel: (320, 1240) → ["Used by 320 people this week", "1,240 installs"] ; 
   - **Discover:** cards for `discoverOrder(...)`, each showing title, one-line description and `statLabel` lines. Empty → "You've installed every recipe — more coming soon." Tap card → `recipe/{id}`.
   - **Recipe** (`recipe/{id}`): title, description, placement hint, stat lines, button "Install" → existing install flow (settings → apps to block → permissions → "Write to a tag" or "Skip for now"). If already installed, the button reads "Edit" → `edit/{id}`.
   - **My recipes:** installed recipes (title, linked tag count "2 tags"/"No tag yet", "On" badge when any of its tags is active, "Update the app to use this" if unusable, "No longer offered" if retired). Tap → `edit/{id}`. Empty → "Nothing installed yet" + button "Browse recipes" → Discover.
-  - **Edit** (`edit/{id}`): settings sliders (stored on each of the recipe's tags; a recipe with no tags keeps them as defaults for its next tag — pin: store as `InstalledTag.params` per tag only; with no tags the sliders are hidden and "Write to a tag" asks for settings first), "Apps to block" (GroupEditor per group used), "Tags" list → `tag/{tagId}`, "Write another tag", "Uninstall" (disabled with "Turn this mode off first" while any of its tags is active; else removes the recipe from `installedRecipes` and its tags from `tags`).
+  - **Edit** (`edit/{id}`): settings sliders that write `params` to every tag of this recipe (params stay per tag in `InstalledTag`; with no tags the sliders are hidden and "Write to a tag" runs the install flow's settings step first), "Apps to block" (GroupEditor per group used), "Tags" list → `tag/{tagId}`, "Write another tag", "Uninstall" (disabled with "Turn this mode off first" while any of its tags is active; else removes the recipe from `installedRecipes` and its tags from `tags`).
   - **ActiveModeStrip:** hidden when nothing is active; else heading "On now", then per active tag: "<label> · ends HH:MM" (or "· strict, N min left") + "End now" → existing `gate/{tagId}`.
   - **Set up this tag** (`setup/{tagId}`, opened for `UnknownTag`): heading "Set up this tag", list of usable recipes, installed first then `discoverOrder`; picking one → install flow with `setupTagId` (no write), which also adds it to `installedRecipes`.
 
