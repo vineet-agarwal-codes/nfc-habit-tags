@@ -7,9 +7,7 @@ appId: com.habittags.app
 - assertVisible: "End Desk: Deep Work early?"
 - assertVisible: "0 of 5 words"
 - takeScreenshot: gate
-- tapOn:
-    id: "gate-input"
-    optional: true
+- tapOn: "Start typing here…"
 - inputText: "x"
 - assertVisible: "Typo — press backspace and fix the highlighted letter."
 - takeScreenshot: gate_typo
