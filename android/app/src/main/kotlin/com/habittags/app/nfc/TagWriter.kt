@@ -23,10 +23,13 @@ object TagWriter {
         NdefRecord.createApplicationRecord(TagPayload.EXTERNAL_DOMAIN),
     )
 
-    fun tagIdOf(messages: List<NdefMessage>): String? = messages.asSequence()
-        .flatMap { it.records.asSequence() }
-        .firstOrNull { it.tnf == NdefRecord.TNF_EXTERNAL_TYPE && it.type.contentEquals(externalType) }
-        ?.let { TagPayload.parse(it.payload) }
+    /** Our external record (Android-written) or the https link record (iPhone-written). */
+    fun tagIdOf(messages: List<NdefMessage>): String? {
+        val records = messages.flatMap { it.records.asList() }
+        return records.firstOrNull { it.tnf == NdefRecord.TNF_EXTERNAL_TYPE && it.type.contentEquals(externalType) }
+            ?.let { TagPayload.parse(it.payload) }
+            ?: records.firstNotNullOfOrNull { r -> r.toUri()?.toString()?.let(TagPayload::parseUrl) }
+    }
 
     private fun isOurs(message: NdefMessage?) = message != null && tagIdOf(listOf(message)) != null
 

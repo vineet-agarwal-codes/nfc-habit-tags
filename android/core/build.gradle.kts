@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
@@ -10,9 +12,15 @@ kotlin {
     jvmToolchain(17)
     jvm()
     if (buildIos) {
-        iosArm64()
-        iosSimulatorArm64()
-        iosX64()
+        // The iPhone app links this as HabitCore.xcframework (static); Apple-silicon simulators only.
+        val xcf = XCFramework("HabitCore")
+        listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
+            target.binaries.framework {
+                baseName = "HabitCore"
+                isStatic = true
+                xcf.add(this)
+            }
+        }
     }
 
     sourceSets {

@@ -22,4 +22,19 @@ class TagPayloadTest {
             assertNull(TagPayload.parse(bad.encodeToByteArray()), bad)
         }
     }
+
+    @Test
+    fun urls() {
+        val id = TagPayload.newTagId()
+        assertEquals("https://vineet-agarwal-codes.github.io/t/$id", TagPayload.urlFor(id))
+        val cases = mapOf(
+            TagPayload.urlFor(id) to id,
+            TagPayload.urlFor(id) + "/" to id,
+            "https://example.com/t/$id" to null,
+            "http://vineet-agarwal-codes.github.io/t/$id" to null,
+            TagPayload.URL_PREFIX + "bad" to null,
+            TagPayload.URL_PREFIX + id + "/x" to null,
+        )
+        for ((url, expected) in cases) assertEquals(expected, TagPayload.parseUrl(url), url)
+    }
 }

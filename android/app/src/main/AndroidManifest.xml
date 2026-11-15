@@ -56,6 +56,15 @@
                     android:pathPrefix="/com.habittags.app:tag"
                     android:scheme="vnd.android.nfc" />
             </intent-filter>
+            <!-- Tags written by the iPhone app hold an https link instead. -->
+            <intent-filter>
+                <action android:name="android.nfc.action.NDEF_DISCOVERED" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data
+                    android:host="vineet-agarwal-codes.github.io"
+                    android:pathPrefix="/t/"
+                    android:scheme="https" />
+            </intent-filter>
         </activity>
 
         <service
