@@ -14,6 +14,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertIs
 
 class StateCodecTest {
@@ -31,6 +32,9 @@ class StateCodecTest {
     @Test
     fun missingOrCorruptDataGivesEmptyState() {
         for (text in listOf(null, "", "garbage", "{\"tags\": 5}")) assertEquals(AppState(), StateCodec.decode(text), "$text")
+        // decodeOrNull tells corrupt data apart from an empty state, so the caller can keep the file.
+        for (text in listOf("", "garbage", "{\"tags\": 5}", "[1]")) assertNull(StateCodec.decodeOrNull(text), text)
+        assertEquals(AppState(), StateCodec.decodeOrNull("{}"))
     }
 
     @Test

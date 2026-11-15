@@ -44,12 +44,14 @@ object StateCodec {
     fun encode(state: AppState): String = json.encodeToString(AppState.serializer(), state)
 
     /** Missing or corrupt data yields an empty state rather than a crash. */
-    fun decode(text: String?): AppState {
-        if (text == null) return AppState()
-        val obj = runCatching { json.parseToJsonElement(text).jsonObject }.getOrNull() ?: return AppState()
+    fun decode(text: String?): AppState = text?.let(::decodeOrNull) ?: AppState()
+
+    /** Null when [text] isn't a readable state, so callers can preserve it instead of overwriting it. */
+    fun decodeOrNull(text: String): AppState? {
+        val obj = runCatching { json.parseToJsonElement(text).jsonObject }.getOrNull() ?: return null
         // State saved before versioning (v1) has no stateVersion; decoding it as-is would take the v2 default.
         val versioned = if ("stateVersion" in obj) obj else JsonObject(obj + ("stateVersion" to JsonPrimitive(1)))
-        val state = runCatching { json.decodeFromJsonElement(AppState.serializer(), versioned) }.getOrNull() ?: return AppState()
+        val state = runCatching { json.decodeFromJsonElement(AppState.serializer(), versioned) }.getOrNull() ?: return null
         return migrate(state)
     }
 
