@@ -75,6 +75,7 @@ grep -q "BlockService" "$OUT/services_after_autooff.txt" && fail "BlockService s
 flow 80_after_autooff
 
 # A mode ending must hand back the user's own DND, not switch it off.
+adb shell am start -a android.intent.action.VIEW -d "habittags-debug://param/last/strictMinutes/0" $PKG
 adb shell cmd notification set_dnd priority
 sleep 2
 [ "$(zen)" != "0" ] || fail "could not turn on user DND (zen_mode=$(zen))"
