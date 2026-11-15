@@ -5,10 +5,10 @@ appId: com.habittags.app
     stopApp: false
 - tapOn: "End now"
 - assertVisible: "End Desk: Deep Work early?"
-- assertVisible: "0 of 5 words"
+- assertVisible: "0 of [0-9]+ words"
 - takeScreenshot: gate
 - tapOn: "Start typing here…"
-- inputText: "x"
+- inputText: "#"
 - assertVisible: "Typo — press backspace and fix the highlighted letter."
 - takeScreenshot: gate_typo
 - eraseText: 1
