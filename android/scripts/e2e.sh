@@ -19,7 +19,11 @@ grant() {
 
 flow() {
   local name=$1
-  maestro test --format junit --output "$OUT/$name.xml" --debug-output "$OUT/$name" "maestro/$name.yaml" || fail "flow $name"
+  if ! maestro test --format junit --output "$OUT/$name.xml" --debug-output "$OUT/$name" "maestro/$name.yaml"; then
+    fail "flow $name"
+    adb exec-out screencap -p > "$OUT/$name.failed.png"
+    adb shell uiautomator dump /sdcard/ui.xml >/dev/null && adb pull /sdcard/ui.xml "$OUT/$name.failed.ui.xml" >/dev/null
+  fi
   adb logcat -d > "$OUT/$name.logcat.txt"
   adb logcat -c
 }
@@ -123,6 +127,7 @@ flow 97_bed_hours
 adb logcat -d > "$OUT/logcat.txt"
 # Screenshot locations differ between Maestro versions; collect them wherever they landed.
 mkdir -p "$OUT/screenshots"
-find . "$HOME/.maestro" -name "*.png" -not -path "./build/e2e/*" -newer "$OUT/launcher_apps.txt" -exec cp {} "$OUT/screenshots/" \; 2>/dev/null || true
+find / -xdev -name "*.png" -newer "$OUT/launcher_apps.txt" -not -path "*/build/e2e/*" 2>/dev/null > "$OUT/png_paths.txt"
+while read -r f; do cp "$f" "$OUT/screenshots/" 2>/dev/null; done < "$OUT/png_paths.txt"
 cp -r "$HOME/.maestro/tests" "$OUT/maestro-tests" 2>/dev/null || true
 exit $status
