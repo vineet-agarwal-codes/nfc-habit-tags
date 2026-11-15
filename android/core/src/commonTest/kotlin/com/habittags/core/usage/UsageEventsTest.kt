@@ -45,6 +45,11 @@ class UsageEventsTest {
             Case("pre-upgrade entries without a zone use the report's zone",
                 listOf(tap("2026-11-15T19:00:00Z", zone = null)), "2026-11-16T09:00:00Z", TimeZone.of("America/New_York"), null,
                 mapOf(Triple("desk", "2026-11-15", "America/New_York") to 1)),
+            Case("same recipe and day in two zones is one summed event, in the zone of the latest tap",
+                listOf(tap("2026-11-15T03:00:00Z"), tap("2026-11-15T04:00:00Z"), tap("2026-11-15T05:00:00Z"),
+                    tap("2026-11-15T12:00:00Z", zone = "Europe/London"), tap("2026-11-15T13:00:00Z", zone = "Europe/London")),
+                "2026-11-15T14:00:00Z", TimeZone.of("Europe/London"), null,
+                mapOf(Triple("desk", "2026-11-15", "Europe/London") to 5)),
             Case("DST change day in London",
                 listOf(tap("2026-10-25T00:30:00Z", zone = "Europe/London"), tap("2026-10-25T23:30:00Z", zone = "Europe/London")),
                 "2026-10-26T12:00:00Z", TimeZone.of("Europe/London"), null,
@@ -66,9 +71,13 @@ class UsageEventsTest {
         assertEquals(JsonArray(listOf(JsonPrimitive("desk"), JsonPrimitive("gym"))), snapshot.payload["recipes"])
         assertEquals("2026-11-16" to "Asia/Kolkata", snapshot.day to snapshot.tz)
 
-        val sent = state.afterReportSent(42L)
+        val sent = state.afterReportSent(42L, report)
         assertEquals(emptyList(), sent.pendingEvents)
         assertEquals(42L, sent.lastReportMs)
+
+        val queuedLater = UsageEvent("y", 1, null, null, payload = buildJsonObject { })
+        val withLater = state.copy(pendingEvents = state.pendingEvents + queuedLater)
+        assertEquals(listOf(queuedLater), withLater.afterReportSent(42L, report).pendingEvents)
     }
 
     @Test
