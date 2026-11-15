@@ -42,6 +42,7 @@ class RecipeValidationTest {
             "time params in a window" to (doc(params = TIME_PARAMS, autoOff = "90", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 2) to true),
             "unknown time placeholder in a window" to (doc(params = TIME_PARAMS, autoOff = "90", whenTime = "{{from}}-{{nope}}", actions = DND, schemaVersion = 2) to false),
             "time param past 23:59" to (doc(params = TIME_PARAMS.replace("\"max\":1439", "\"max\":1440"), autoOff = "90", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 2) to false),
+            "window placeholder pointing at a duration" to (doc(whenTime = "{{autoOff}}-05:00", actions = DND, schemaVersion = 2) to false),
             "negative time param" to (doc(params = TIME_PARAMS.replace("\"min\":0", "\"min\":-1"), autoOff = "90", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 2) to false),
         )
         for ((name, case) in cases) {

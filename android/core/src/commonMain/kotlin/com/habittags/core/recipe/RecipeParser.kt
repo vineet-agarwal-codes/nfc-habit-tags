@@ -46,6 +46,9 @@ fun validate(recipe: Recipe): String? {
         runCatching { bindInt(value, recipe.params, emptyMap()) }.exceptionOrNull()?.let { return it.message }
     }
     for (window in recipe.rules.mapNotNull { it.`when`?.time }) {
+        Regex("""\{\{(\w+)\}\}""").findAll(window).map { it.groupValues[1] }
+            .firstOrNull { key -> recipe.params.none { it.key == key && it.type == "time" } }
+            ?.let { return "Time window $window uses {{$it}}, which isn't a time param" }
         runCatching { windowContains(resolveWindow(window, recipe.params, emptyMap()), LocalTime(0, 0)) }
             .exceptionOrNull()?.let { return it.message }
     }
