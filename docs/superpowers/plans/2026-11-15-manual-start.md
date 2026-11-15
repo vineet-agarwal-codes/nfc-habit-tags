@@ -52,3 +52,7 @@
 - [ ] Labels via `HabitTagsApp.modeLabel` (tag label, else recipe title).
 - [ ] Maestro 95: Discover → Desk → Install → Skip for now → My recipes → Start now → "On now" visible, "Start now" not visible → End now → "End Desk: Deep Work early?" → back → `expire-soon/app:desk-deep-work` → wait ≤ 120 s → "On now" gone.
 - [ ] Push; CI green. Commit.
+
+## Deviations
+
+- Added during self-review: a recipe installed with "Skip for now" may never have been granted its permissions, so **Start now** checks them first — on My recipes it opens the recipe's Edit screen, where the permission cards show and Start now stays disabled until they're granted.
