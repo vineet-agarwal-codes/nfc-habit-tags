@@ -2,7 +2,9 @@ name: android
 
 on:
   push:
+    paths-ignore: ['ios/**', 'docs/**', '.github/workflows/ios.yml']
   pull_request:
+    paths-ignore: ['ios/**', 'docs/**', '.github/workflows/ios.yml']
   workflow_dispatch:
 
 concurrency:

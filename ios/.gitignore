@@ -1,0 +1,5 @@
+*.xcodeproj
+build/
+HabitTags/Info.plist
+HabitTags/HabitTags.entitlements
+fastlane/report.xml

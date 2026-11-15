@@ -1,0 +1,101 @@
+name: ios
+
+on:
+  push:
+    paths: ['ios/**', 'android/core/**', 'android/app/src/main/assets/catalog.json', '.github/workflows/ios.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Shared core on iOS (tests + HabitCore.xcframework)
+        working-directory: android
+        run: ./gradlew :core:iosSimulatorArm64Test :core:assembleHabitCoreReleaseXCFramework
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: brew install xcodegen && xcodegen generate
+
+      - name: Unit and UI tests (simulator)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild test -project HabitTags.xcodeproj -scheme HabitTags \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -resultBundlePath build/TestResults.xcresult | xcbeautify
+
+      - name: Unsigned IPA for sideloading (SideStore / AltStore / Sideloadly)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild build -project HabitTags.xcodeproj -scheme HabitTags -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build/dd \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" | xcbeautify
+          APP=build/dd/Build/Products/Release-iphoneos/HabitTags.app
+          # Ad-hoc signature carrying the entitlements, so re-signing tools keep NFC/links where allowed.
+          codesign --force --sign - --entitlements HabitTags/HabitTags.entitlements "$APP"
+          mkdir -p build/ipa/Payload && cp -R "$APP" build/ipa/Payload/
+          (cd build/ipa && zip -qry ../HabitTags-unsigned.ipa Payload)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: habit-tags-unsigned-ipa
+          path: ios/build/HabitTags-unsigned.ipa
+
+      - name: Test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: ios/build/TestResults.xcresult
+
+  testflight-gate:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+        run: |
+          if [ -z "$KEY_ID" ]; then echo "TestFlight skipped: secrets not set"; echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else echo "enabled=true" >> "$GITHUB_OUTPUT"; fi
+
+  testflight:
+    needs: [build-test, testflight-gate]
+    if: needs.testflight-gate.outputs.enabled == 'true'
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - working-directory: android
+        run: ./gradlew :core:assembleHabitCoreReleaseXCFramework
+      - working-directory: ios
+        run: brew install xcodegen && xcodegen generate
+      - name: Build and upload to TestFlight
+        working-directory: ios
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.APP_STORE_CONNECT_KEY_P8 }}
+          TEAM_ID: ${{ secrets.TEAM_ID }}
+        run: fastlane beta

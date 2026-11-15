@@ -112,6 +112,13 @@ class AppEngineTest {
     }
 
     @Test
+    fun badRemoteResponsesLeaveCatalogAlone() {
+        val e = engine()
+        assertFalse(e.applyRemote("{}", "[]", null, at("10:00")))
+        assertTrue(e.discover(at("10:00"), tz).isNotEmpty())
+    }
+
+    @Test
     fun gymBagRunsEffects() {
         val e = engine()
         e.install("gym-bag")

@@ -102,9 +102,10 @@ class AppEngine(stateJson: String?, bundledCatalogJson: String, cachedSnapshotJs
 
     // --- Catalog -------------------------------------------------------------------------------
 
-    fun applyRemote(recipesJson: String, groupsJson: String, statsJson: String?, nowMs: Long) {
+    /** False (catalog unchanged) when the responses can't be read; Kotlin exceptions must not reach Swift. */
+    fun applyRemote(recipesJson: String, groupsJson: String, statsJson: String?, nowMs: Long): Boolean = runCatching {
         snapshot = mergeCatalog(snapshot, decodeRemoteCatalog(recipesJson, groupsJson, statsJson, nowMs), state.installedRecipes)
-    }
+    }.isSuccess
 
     fun discover(nowMs: Long, tzId: String): List<RecipeCard> =
         discoverOrder(snapshot, state.installedRecipes, Instant.fromEpochMilliseconds(nowMs)).map { card(it, tzId) }

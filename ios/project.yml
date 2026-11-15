@@ -1,0 +1,72 @@
+name: HabitTags
+options:
+  bundleIdPrefix: com.habittags
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+targets:
+  HabitTags:
+    type: application
+    platform: iOS
+    sources:
+      - path: HabitTags
+      - path: ../android/app/src/main/assets/catalog.json
+        buildPhase: resources
+    dependencies:
+      # Built by `./gradlew :core:assembleHabitCoreReleaseXCFramework` (static, so not embedded).
+      - framework: ../android/core/build/XCFrameworks/release/HabitCore.xcframework
+        embed: false
+      - sdk: Security.framework
+      - sdk: CoreNFC.framework
+    entitlements:
+      path: HabitTags/HabitTags.entitlements
+      properties:
+        com.apple.developer.nfc.readersession.formats: [NDEF, TAG]
+        com.apple.developer.associated-domains: ["applinks:vineet-agarwal-codes.github.io"]
+    info:
+      path: HabitTags/Info.plist
+      properties:
+        CFBundleDisplayName: Habit Tags
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NFCReaderUsageDescription: Habit Tags reads and writes your NFC tags so a tap can switch your phone into the right mode.
+        UIBackgroundModes: [fetch]
+        BGTaskSchedulerPermittedIdentifiers: [com.habittags.app.report]
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.habittags.app
+        OTHER_LDFLAGS: ["-lc++"]
+        CODE_SIGN_STYLE: Automatic
+  HabitTagsTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [HabitTagsTests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: HabitTags
+  HabitTagsUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [HabitTagsUITests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: HabitTags
+    dependencies:
+      - target: HabitTags
+schemes:
+  HabitTags:
+    build:
+      targets:
+        HabitTags: all
+    test:
+      targets: [HabitTagsTests, HabitTagsUITests]
