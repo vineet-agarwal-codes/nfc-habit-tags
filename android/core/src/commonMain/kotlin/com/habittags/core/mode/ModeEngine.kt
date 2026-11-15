@@ -36,6 +36,9 @@ sealed interface TapResult {
     data class Ended(val state: Map<String, ActiveMode>, val effects: List<Action>) : TapResult
     data class StrictRefused(val remainingMs: Long) : TapResult
     data class Ran(val effects: List<Action>) : TapResult
+
+    /** A toggle recipe tapped outside the time windows in which it turns on; `windows` are those "HH:MM-HH:MM" ranges. */
+    data class OutsideHours(val windows: List<String>, val effects: List<Action>) : TapResult
 }
 
 private const val MINUTE_MS = 60_000L
@@ -61,10 +64,14 @@ object ModeEngine {
             if (strictUntil != null && nowMs < strictUntil) return TapResult.StrictRefused(strictUntil - nowMs)
             return TapResult.Ended(active - key, recipe.endActions)
         }
-        val actions = selectRule(recipe.rules, now.toLocalDateTime(timeZone).time)?.actions ?: return TapResult.Ran(emptyList())
+        val actions = selectRule(recipe.rules, now.toLocalDateTime(timeZone).time)?.actions.orEmpty()
         val effects = actions.filter { it !is BlockGroups && it !is Dnd }
+        if (recipe.mode == Mode.oneShot) return TapResult.Ran(effects)
         // A toggle rule with nothing to keep on (e.g. a daytime tap on the bed tag) just runs its effects.
-        if (recipe.mode == Mode.oneShot || effects.size == actions.size) return TapResult.Ran(effects)
+        if (effects.size == actions.size) {
+            val windows = recipe.rules.filter { r -> r.actions.any { it is BlockGroups || it is Dnd } }.mapNotNull { it.`when`?.time }
+            return if (windows.isEmpty()) TapResult.Ran(effects) else TapResult.OutsideHours(windows, effects)
+        }
 
         val autoOff = bindInt(recipe.autoOffMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
         val strict = bindInt(recipe.strictMinutes, recipe.params, tag.params)?.takeIf { it > 0 }

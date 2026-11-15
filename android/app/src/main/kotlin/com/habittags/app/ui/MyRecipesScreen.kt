@@ -9,19 +9,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.habittags.app.TapHandler
+import com.habittags.core.mode.TapResult
 import com.habittags.core.recipe.Mode
 import com.habittags.core.recipe.Recipe
 import com.habittags.core.recipe.isUsable
@@ -73,9 +79,23 @@ fun tagCount(n: Int): String = when (n) {
 @Composable
 fun StartNowButton(recipe: Recipe, enabled: Boolean = true, onNeedsPermissions: () -> Unit = {}) {
     val context = LocalContext.current
+    var notNow by remember { mutableStateOf<String?>(null) }
     OutlinedButton(enabled = enabled, onClick = {
-        if (permissionsGranted(context, recipe)) TapHandler.startManually(context, recipe.id) else onNeedsPermissions()
+        if (!permissionsGranted(context, recipe)) {
+            onNeedsPermissions()
+        } else {
+            val result = TapHandler.startManually(context, recipe.id)
+            if (result is TapResult.OutsideHours) notNow = TapHandler.outsideHoursMessage(recipe.title, result.windows)
+        }
     }) {
         Text(if (recipe.mode == Mode.oneShot) "Run now" else "Start now")
+    }
+    notNow?.let { message ->
+        AlertDialog(
+            onDismissRequest = { notNow = null },
+            confirmButton = { TextButton(onClick = { notNow = null }) { Text("OK") } },
+            title = { Text("Not available right now") },
+            text = { Text(message) },
+        )
     }
 }

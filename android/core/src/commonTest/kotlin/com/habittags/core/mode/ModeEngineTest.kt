@@ -100,7 +100,23 @@ class ModeEngineTest {
     @Test
     fun noMatchingRuleRunsNothing() {
         val nightOnly = desk.copy(rules = listOf(desk.rules.single().copy(`when` = When("22:00-06:00"))))
-        assertEquals(TapResult.Ran(emptyList()), tap(emptyMap(), deskTag, nightOnly, "10:00"))
+        assertEquals(TapResult.OutsideHours(listOf("22:00-06:00"), emptyList()), tap(emptyMap(), deskTag, nightOnly, "10:00"))
+    }
+
+    @Test
+    fun daytimeTapOnNightRecipeSaysWhenItRuns() {
+        val bedLike = desk.copy(
+            rules = listOf(
+                desk.rules.single().copy(`when` = When("21:00-05:00")),
+                Rule(actions = listOf(Log("day"))),
+            ),
+        )
+        assertEquals(TapResult.OutsideHours(listOf("21:00-05:00"), listOf(Log("day"))), tap(emptyMap(), deskTag, bedLike, "15:10"))
+        assertIs<TapResult.Started>(tap(emptyMap(), deskTag, bedLike, "21:00"))
+        assertEquals(
+            TapResult.OutsideHours(listOf("21:00-05:00"), listOf(Log("day"))),
+            ModeEngine.startManually(emptyMap(), deskTag, bedLike, at("15:10"), zone, groups),
+        )
     }
 
     @Test

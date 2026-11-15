@@ -82,9 +82,20 @@ object TapHandler {
                 EffectRunner.run(context, result.effects, recipe, tag.params)
                 title
             }
+            is TapResult.OutsideHours -> {
+                EffectRunner.run(context, result.effects, recipe, tag.params)
+                // Start now shows this in a dialog instead (see StartNowButton).
+                if (source == "app") null else outsideHoursMessage(recipe?.title ?: title, result.windows)
+            }
         }
         BlockController.sync(context)
         message?.let { Toast.makeText(context.applicationContext, it, Toast.LENGTH_LONG).show() }
+    }
+
+    fun outsideHoursMessage(title: String, windows: List<String>): String {
+        val ranges = windows.joinToString(" or ") { w -> w.split("-").let { "between ${it[0]} and ${it[1]}" } }
+        val now = DateTimeFormatter.ofPattern("HH:mm").format(java.time.LocalTime.now())
+        return "$title only turns on $ranges. It's $now now, so nothing was started."
     }
 
     fun minutesLeft(ms: Long): Long = (ms + 59_999) / 60_000
