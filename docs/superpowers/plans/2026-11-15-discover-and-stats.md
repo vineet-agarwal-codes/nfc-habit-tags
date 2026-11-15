@@ -312,3 +312,17 @@ statLabel: (320, 1240) → ["Used by 320 people this week", "1,240 installs"] ; 
 - [ ] **Step 1:** Update `docs/superpowers/specs/2026-11-15-discover-and-stats-design.md` "Calls made" only if implementation forced a change; update `backend/README.md` with how authors publish (Table editor → `recipes` → paste doc JSON, set `published` and `published_at`).
 - [ ] **Step 2:** Run `backend/scripts/test.sh`, `node backend/scripts/realtime_smoke.mjs`, `./gradlew :core:jvmTest`; CI green on the final push.
 - [ ] **Step 3:** One fresh reviewer (most capable model) over the whole branch diff since the plan commit; fix confirmed findings; push; CI green.
+
+---
+
+## Execution notes (deviations)
+
+- Realtime join sends no `access_token`: the publishable key isn't a JWT; the anon role from `apikey` is enough (smoke test passes). `Realtime.joinMessage(ref)` therefore takes no key.
+- `daily_usage.tz` is created in `0002` rather than added in `0003`.
+- `report_events` uses `#variable_conflict use_column`; `0004_report_events_hardening.sql` makes a malformed event skip instead of failing the call (final review).
+- `recipe_stats` test compares against a baseline so real usage can't break it.
+- `HabitTagsApp` keeps `catalog: StateFlow<Catalog?>` (derived) and adds `snapshot`.
+- Debug builds default to the real backend (Vineet installs the CI APK); `e2e.sh` writes the debug prefs to `offline` before the app's first launch, runs the offline case first, then switches to `fixture`. Instrumented tests therefore never reach production.
+- `UsageReporting.sendNow` assigns a device id if the state lost it instead of skipping.
+- Uninstall e2e is the last flow (`90_uninstall`).
+- Final review was a self-review by the executor (the executing session could not dispatch a separate reviewer).
