@@ -1,5 +1,6 @@
 package com.habittags.app
 
+import com.habittags.core.store.APP_KEY_PREFIX
 import android.app.Activity
 import android.os.Bundle
 import com.habittags.app.backend.UsageReporting
@@ -9,7 +10,7 @@ import kotlinx.coroutines.runBlocking
 /**
  * Debug-only deep links so emulator flows can simulate what needs real hardware:
  * habittags-debug://tap/<tagId|last>, habittags-debug://gate-words/<n>, habittags-debug://expire-soon/<tagId|last>,
- * habittags-debug://param/<tagId|last>/<key>/<value>, habittags-debug://backend/<real|fixture|offline>,
+ * habittags-debug://param/<tagId|last|app:recipeId>/<key>/<value>, habittags-debug://backend/<real|fixture|offline>,
  * habittags-debug://report-now
  */
 class DebugLinkActivity : Activity() {
@@ -29,10 +30,15 @@ class DebugLinkActivity : Activity() {
             "gate-words" -> arg?.toIntOrNull()?.let { DebugSettings.setGateWords(this, it) }
             "param" -> {
                 val (id, key, value) = uri.pathSegments.takeIf { it.size == 3 } ?: return finish()
-                resolve(id)?.let { tagId ->
-                    app.update { s ->
-                        val tag = s.tags[tagId] ?: return@update s
-                        s.copy(tags = s.tags + (tagId to tag.copy(params = tag.params + (key to value.toInt()))))
+                if (id.startsWith(APP_KEY_PREFIX)) {
+                    val recipeId = id.removePrefix(APP_KEY_PREFIX)
+                    app.update { s -> s.copy(recipeParams = s.recipeParams + (recipeId to (s.recipeParams[recipeId].orEmpty() + (key to value.toInt())))) }
+                } else {
+                    resolve(id)?.let { tagId ->
+                        app.update { s ->
+                            val tag = s.tags[tagId] ?: return@update s
+                            s.copy(tags = s.tags + (tagId to tag.copy(params = tag.params + (key to value.toInt()))))
+                        }
                     }
                 }
             }

@@ -43,13 +43,13 @@ object TapHandler {
     }
 
     /** Starts (or runs) an installed recipe without its tag, exactly as a tap on its first tag would. */
-    fun startManually(context: Context, recipeId: String): TapResult {
+    fun startManually(context: Context, recipeId: String, force: Boolean = false): TapResult {
         val app = HabitTagsApp.from(context)
         ModeExpiry.expireNow(context)
         val state = app.state.value
         val recipe = app.recipe(recipeId)
         val tag = state.manualTag(recipeId, recipe?.title ?: recipeId)
-        val result = ModeEngine.startManually(state.active, tag, recipe, Clock.System.now(), groups = app.groups())
+        val result = ModeEngine.startManually(state.active, tag, recipe, Clock.System.now(), groups = app.groups(), force = force)
         apply(context, tag, recipe, tag.tagId, result, "app")
         return result
     }
@@ -92,11 +92,14 @@ object TapHandler {
         message?.let { Toast.makeText(context.applicationContext, it, Toast.LENGTH_LONG).show() }
     }
 
-    fun outsideHoursMessage(title: String, windows: List<String>): String {
-        val ranges = windows.joinToString(" or ") { w -> w.split("-").let { "between ${it[0]} and ${it[1]}" } }
-        val now = DateTimeFormatter.ofPattern("HH:mm").format(java.time.LocalTime.now())
-        return "$title only turns on $ranges. It's $now now, so nothing was started."
-    }
+    /** "between 21:00 and 05:00" (several windows joined with "or"). */
+    fun describeWindows(windows: List<String>): String =
+        windows.joinToString(" or ") { w -> w.split("-").let { "between ${it[0]} and ${it[1]}" } }
+
+    fun nowHhMm(): String = DateTimeFormatter.ofPattern("HH:mm").format(java.time.LocalTime.now())
+
+    fun outsideHoursMessage(title: String, windows: List<String>): String =
+        "$title only turns on ${describeWindows(windows)}. It's ${nowHhMm()} now, so nothing was started."
 
     fun minutesLeft(ms: Long): Long = (ms + 59_999) / 60_000
 

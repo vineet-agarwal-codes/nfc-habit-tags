@@ -1,9 +1,40 @@
 {
   "appGroups": [
-    {"id": "social", "title": "Social media", "androidPackages": ["com.instagram.android", "com.facebook.katana", "com.twitter.android", "com.snapchat.android", "in.mohalla.sharechat", "com.reddit.frontpage"]},
-    {"id": "video", "title": "Video and streaming", "androidPackages": ["com.google.android.youtube", "com.netflix.mediaclient", "in.startv.hotstar", "com.amazon.avod.thirdpartyclient"]},
-    {"id": "messaging", "title": "Messaging", "androidPackages": ["com.whatsapp", "org.telegram.messenger"]},
-    {"id": "games", "title": "Games", "androidPackages": []}
+    {
+      "id": "social",
+      "title": "Social media",
+      "androidPackages": [
+        "com.instagram.android",
+        "com.facebook.katana",
+        "com.twitter.android",
+        "com.snapchat.android",
+        "in.mohalla.sharechat",
+        "com.reddit.frontpage"
+      ]
+    },
+    {
+      "id": "video",
+      "title": "Video and streaming",
+      "androidPackages": [
+        "com.google.android.youtube",
+        "com.netflix.mediaclient",
+        "in.startv.hotstar",
+        "com.amazon.avod.thirdpartyclient"
+      ]
+    },
+    {
+      "id": "messaging",
+      "title": "Messaging",
+      "androidPackages": [
+        "com.whatsapp",
+        "org.telegram.messenger"
+      ]
+    },
+    {
+      "id": "games",
+      "title": "Games",
+      "androidPackages": []
+    }
   ],
   "recipes": [
     {
@@ -15,35 +46,124 @@
       "placementHint": "Stick it on your desk where your phone rests, or under the desk edge.",
       "mode": "toggle",
       "params": [
-        {"key": "autoOffMinutes", "type": "duration", "label": "Turn off automatically after", "default": 90, "min": 15, "max": 480},
-        {"key": "strictMinutes", "type": "duration", "label": "Can't turn off with the tag for", "default": 0, "min": 0, "max": 240}
+        {
+          "key": "autoOffMinutes",
+          "type": "duration",
+          "label": "Turn off automatically after",
+          "default": 90,
+          "min": 15,
+          "max": 480
+        },
+        {
+          "key": "strictMinutes",
+          "type": "duration",
+          "label": "Can't turn off with the tag for",
+          "default": 0,
+          "min": 0,
+          "max": 240
+        }
       ],
       "autoOffMinutes": "{{autoOffMinutes}}",
       "strictMinutes": "{{strictMinutes}}",
       "rules": [
-        {"actions": [{"type": "blockGroups", "groups": ["social", "video"]}, {"type": "dnd"}]}
+        {
+          "actions": [
+            {
+              "type": "blockGroups",
+              "groups": [
+                "social",
+                "video"
+              ]
+            },
+            {
+              "type": "dnd"
+            }
+          ]
+        }
       ]
     },
     {
       "id": "bed-sleep",
-      "schemaVersion": 1,
-      "version": 1,
+      "schemaVersion": 2,
+      "version": 2,
       "title": "Bed: Sleep Mode",
       "description": "Tap at night to block distracting apps and silence notifications. Tap again in the morning to end sleep mode and start your morning routine.",
       "placementHint": "Stick it on your bedside table where your phone stays overnight.",
       "mode": "toggle",
       "params": [
-        {"key": "autoOffMinutes", "type": "duration", "label": "Wake up mode starts after", "default": 480, "min": 240, "max": 720},
-        {"key": "strictMinutes", "type": "duration", "label": "Can't turn off with the tag for", "default": 0, "min": 0, "max": 480}
+        {
+          "key": "autoOffMinutes",
+          "type": "duration",
+          "label": "Wake up mode starts after",
+          "default": 480,
+          "min": 240,
+          "max": 720
+        },
+        {
+          "key": "sleepStart",
+          "type": "time",
+          "label": "Sleep mode can start from",
+          "default": 1260,
+          "min": 0,
+          "max": 1439
+        },
+        {
+          "key": "sleepEnd",
+          "type": "time",
+          "label": "until",
+          "default": 300,
+          "min": 0,
+          "max": 1439
+        },
+        {
+          "key": "strictMinutes",
+          "type": "duration",
+          "label": "Can't turn off with the tag for",
+          "default": 0,
+          "min": 0,
+          "max": 480
+        }
       ],
       "autoOffMinutes": "{{autoOffMinutes}}",
       "strictMinutes": "{{strictMinutes}}",
       "rules": [
-        {"when": {"time": "21:00-05:00"}, "actions": [{"type": "blockGroups", "groups": ["social", "video", "games"]}, {"type": "dnd"}]},
-        {"actions": [{"type": "log", "label": "Bed tap outside night hours"}]}
+        {
+          "when": {
+            "time": "{{sleepStart}}-{{sleepEnd}}"
+          },
+          "actions": [
+            {
+              "type": "blockGroups",
+              "groups": [
+                "social",
+                "video",
+                "games"
+              ]
+            },
+            {
+              "type": "dnd"
+            }
+          ]
+        },
+        {
+          "actions": [
+            {
+              "type": "log",
+              "label": "Bed tap outside night hours"
+            }
+          ]
+        }
       ],
       "endActions": [
-        {"type": "checklist", "title": "Good morning", "items": ["Drink a glass of water", "Make the bed", "Put on workout clothes"]}
+        {
+          "type": "checklist",
+          "title": "Good morning",
+          "items": [
+            "Drink a glass of water",
+            "Make the bed",
+            "Put on workout clothes"
+          ]
+        }
       ]
     },
     {
@@ -55,11 +175,27 @@
       "placementHint": "Stick it inside your gym bag or on its strap.",
       "mode": "oneShot",
       "rules": [
-        {"actions": [
-          {"type": "timer", "minutes": 60},
-          {"type": "log", "label": "Workout"},
-          {"type": "checklist", "title": "Before you go", "items": ["Water bottle", "Headphones", "Towel"]}
-        ]}
+        {
+          "actions": [
+            {
+              "type": "timer",
+              "minutes": 60
+            },
+            {
+              "type": "log",
+              "label": "Workout"
+            },
+            {
+              "type": "checklist",
+              "title": "Before you go",
+              "items": [
+                "Water bottle",
+                "Headphones",
+                "Towel"
+              ]
+            }
+          ]
+        }
       ]
     },
     {
@@ -71,7 +207,20 @@
       "placementHint": "Stick it next to the door handle or on the key bowl.",
       "mode": "oneShot",
       "rules": [
-        {"actions": [{"type": "checklist", "title": "Leaving home", "items": ["Keys", "Wallet", "Phone charger", "Lights off"]}]}
+        {
+          "actions": [
+            {
+              "type": "checklist",
+              "title": "Leaving home",
+              "items": [
+                "Keys",
+                "Wallet",
+                "Phone charger",
+                "Lights off"
+              ]
+            }
+          ]
+        }
       ]
     }
   ]

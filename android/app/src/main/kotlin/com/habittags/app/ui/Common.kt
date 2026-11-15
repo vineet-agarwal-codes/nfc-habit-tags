@@ -2,20 +2,27 @@ package com.habittags.app.ui
 
 import android.content.Context
 import android.content.Intent
+import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -27,11 +34,15 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.habittags.app.HabitTagsApp
 import com.habittags.app.Permissions
+import com.habittags.app.TapHandler
+import com.habittags.core.mode.ModeEngine
+import com.habittags.core.recipe.Mode
 import com.habittags.core.recipe.BlockGroups
 import com.habittags.core.recipe.Dnd
 import com.habittags.core.recipe.ParamSpec
 import com.habittags.core.recipe.Recipe
 import kotlin.math.roundToInt
+import com.habittags.core.rules.formatMinutes as formatTimeOfDay
 
 fun Context.app() = HabitTagsApp.from(this)
 
@@ -53,6 +64,46 @@ fun rememberResumeTick(): Int {
         onDispose { owner.lifecycle.removeObserver(observer) }
     }
     return tick
+}
+
+/** "Turns on between 21:00 and 05:00" for recipes with time windows, using the user's times; null otherwise. */
+fun hoursText(recipe: Recipe, userValues: Map<String, Int>): String? =
+    runCatching { ModeEngine.modeWindows(recipe, userValues) }.getOrNull()
+        ?.takeIf { it.isNotEmpty() && recipe.mode == Mode.toggle }
+        ?.let { "Turns on ${TapHandler.describeWindows(it)}" }
+
+/** A time param (minutes since midnight) as a tappable row that opens a time picker; other params as sliders. */
+@Composable
+fun ParamControl(spec: ParamSpec, value: Int, onChange: (Int) -> Unit) {
+    if (spec.type == "time") TimeParamRow(spec, value, onChange) else ParamSlider(spec, value, onChange)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeParamRow(spec: ParamSpec, value: Int, onChange: (Int) -> Unit) {
+    val context = LocalContext.current
+    var picking by remember { mutableStateOf(false) }
+    OutlinedCard(onClick = { picking = true }, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("${spec.label}: ${formatTimeOfDay(value)}", Modifier.weight(1f))
+            Text("Change", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+        }
+    }
+    if (picking) {
+        val picker = rememberTimePickerState(value / 60, value % 60, is24Hour = DateFormat.is24HourFormat(context))
+        AlertDialog(
+            onDismissRequest = { picking = false },
+            title = { Text(spec.label) },
+            text = { TimePicker(picker) },
+            confirmButton = {
+                TextButton(onClick = {
+                    picking = false
+                    onChange((picker.hour * 60 + picker.minute).coerceIn(spec.min, spec.max))
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { picking = false }) { Text("Cancel") } },
+        )
+    }
 }
 
 @Composable

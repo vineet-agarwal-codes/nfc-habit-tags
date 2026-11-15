@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.habittags.app.TapHandler
 import com.habittags.core.mode.TapResult
+import com.habittags.core.store.manualTag
 import com.habittags.core.recipe.Mode
 import com.habittags.core.recipe.Recipe
 import com.habittags.core.recipe.isUsable
@@ -57,6 +58,7 @@ fun MyRecipesScreen(onOpen: (String) -> Unit, onBrowse: () -> Unit) {
                         if (on) Text("On", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                     }
                     Text(tagCount(tags.size), style = MaterialTheme.typography.bodyMedium)
+                    hoursText(recipe, state.manualTag(recipe.id, recipe.title).params)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     if (!isUsable(recipe)) Text("Update the app to use this", style = MaterialTheme.typography.labelLarge)
                     if (snapshot.meta[recipe.id]?.retired == true) Text("No longer offered", style = MaterialTheme.typography.labelLarge)
                     if (!on && isUsable(recipe)) StartNowButton(recipe, onNeedsPermissions = { onOpen(recipe.id) })
@@ -79,23 +81,33 @@ fun tagCount(n: Int): String = when (n) {
 @Composable
 fun StartNowButton(recipe: Recipe, enabled: Boolean = true, onNeedsPermissions: () -> Unit = {}) {
     val context = LocalContext.current
-    var notNow by remember { mutableStateOf<String?>(null) }
+    var outside by remember { mutableStateOf<TapResult.OutsideHours?>(null) }
     OutlinedButton(enabled = enabled, onClick = {
         if (!permissionsGranted(context, recipe)) {
             onNeedsPermissions()
         } else {
-            val result = TapHandler.startManually(context, recipe.id)
-            if (result is TapResult.OutsideHours) notNow = TapHandler.outsideHoursMessage(recipe.title, result.windows)
+            outside = TapHandler.startManually(context, recipe.id) as? TapResult.OutsideHours
         }
     }) {
         Text(if (recipe.mode == Mode.oneShot) "Run now" else "Start now")
     }
-    notNow?.let { message ->
+    outside?.let { result ->
         AlertDialog(
-            onDismissRequest = { notNow = null },
-            confirmButton = { TextButton(onClick = { notNow = null }) { Text("OK") } },
-            title = { Text("Not available right now") },
-            text = { Text(message) },
+            onDismissRequest = { outside = null },
+            title = { Text("Outside its usual hours") },
+            text = {
+                Text(
+                    "${recipe.title} normally turns on ${TapHandler.describeWindows(result.windows)}. " +
+                        "It's ${TapHandler.nowHhMm()} now. Start it anyway?",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    outside = null
+                    TapHandler.startManually(context, recipe.id, force = true)
+                }) { Text("Start anyway") }
+            },
+            dismissButton = { TextButton(onClick = { outside = null }) { Text("Cancel") } },
         )
     }
 }

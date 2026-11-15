@@ -1,0 +1,40 @@
+appId: com.habittags.app
+---
+# Bed's sleep hours are shown and editable; Start now outside them offers "Start anyway".
+- launchApp:
+    stopApp: false
+- tapOn: "Discover"
+- scrollUntilVisible:
+    element: "Bed: Sleep Mode"
+    centerElement: true
+- tapOn: "Bed: Sleep Mode"
+- assertVisible: "Turns on between 21:00 and 05:00"
+- tapOn: "Install"
+- assertVisible: "Sleep mode can start from: 21:00"
+- assertVisible: "until: 05:00"
+- tapOn: "Sleep mode can start from: 21:00"
+- assertVisible: "Cancel"
+- takeScreenshot: bed_time_picker
+- tapOn: "Cancel"
+- scrollUntilVisible:
+    element: "Skip for now"
+- tapOn: "Skip for now"
+# A one-minute window just after midnight, so "now" is outside it (except for that one minute).
+- openLink: "habittags-debug://param/app:bed-sleep/sleepStart/0"
+- openLink: "habittags-debug://param/app:bed-sleep/sleepEnd/1"
+- launchApp:
+    stopApp: false
+- tapOn: "My recipes"
+- scrollUntilVisible:
+    element: "Turns on between 00:00 and 00:01"
+- tapOn: "Bed: Sleep Mode"
+- assertVisible: "Turns on between 00:00 and 00:01"
+- tapOn: "Start now"
+- assertVisible: "Outside its usual hours"
+- takeScreenshot: bed_outside_hours
+- tapOn: "Start anyway"
+- extendedWaitUntil:
+    visible: "On now"
+    timeout: 5000
+- takeScreenshot: bed_started_anyway
+- openLink: "habittags-debug://expire-soon/app:bed-sleep"

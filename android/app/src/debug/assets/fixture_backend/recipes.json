@@ -53,8 +53,8 @@
   "id": "bed-sleep",
   "doc": {
    "id": "bed-sleep",
-   "schemaVersion": 1,
-   "version": 1,
+   "schemaVersion": 2,
+   "version": 2,
    "title": "Bed: Sleep Mode",
    "description": "Tap at night to block distracting apps and silence notifications. Tap again in the morning to end sleep mode and start your morning routine.",
    "placementHint": "Stick it on your bedside table where your phone stays overnight.",
@@ -67,6 +67,22 @@
      "default": 480,
      "min": 240,
      "max": 720
+    },
+    {
+     "key": "sleepStart",
+     "type": "time",
+     "label": "Sleep mode can start from",
+     "default": 1260,
+     "min": 0,
+     "max": 1439
+    },
+    {
+     "key": "sleepEnd",
+     "type": "time",
+     "label": "until",
+     "default": 300,
+     "min": 0,
+     "max": 1439
     },
     {
      "key": "strictMinutes",
@@ -82,7 +98,7 @@
    "rules": [
     {
      "when": {
-      "time": "21:00-05:00"
+      "time": "{{sleepStart}}-{{sleepEnd}}"
      },
      "actions": [
       {

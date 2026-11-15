@@ -47,8 +47,9 @@ fun RecipeEditScreen(recipeId: String, onOpenTag: (String) -> Unit, onInstallFlo
         if (running) Text("On now", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
         else if (isUsable(recipe)) StartNowButton(recipe, enabled = PermissionCards(recipe))
         val current = tags.firstOrNull()?.params ?: state.recipeParams[recipeId].orEmpty()
+        hoursText(recipe, current)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         recipe.params.forEach { spec ->
-            ParamSlider(spec, (current[spec.key] ?: spec.default).coerceIn(spec.min, spec.max)) { v ->
+            ParamControl(spec, (current[spec.key] ?: spec.default).coerceIn(spec.min, spec.max)) { v ->
                 app.update { s ->
                     s.copy(
                         tags = s.tags.mapValues { (_, t) -> if (t.recipeId == recipeId) t.copy(params = t.params + (spec.key to v)) else t },

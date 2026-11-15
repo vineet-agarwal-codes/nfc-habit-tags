@@ -116,6 +116,7 @@ sleep 3
 adb shell cmd notification set_dnd off
 flow 90_uninstall
 flow 95_manual_start
+flow 97_bed_hours
 adb shell dumpsys activity services $PKG > "$OUT/services_after_manual.txt"
 grep -q "BlockService" "$OUT/services_after_manual.txt" && fail "BlockService still running after manual mode auto-off"
 

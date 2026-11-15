@@ -57,7 +57,8 @@ fun InstallScreen(recipeId: String, setupTagId: String?, onDone: () -> Unit) {
         Text(recipe.description)
         Text("Where to put it: ${recipe.placementHint}", style = MaterialTheme.typography.bodyMedium)
         OutlinedTextField(label, { label = it }, Modifier.fillMaxWidth(), label = { Text("Tag name") }, singleLine = true)
-        recipe.params.forEach { spec -> ParamSlider(spec, params[spec.key] ?: spec.default) { params[spec.key] = it } }
+        recipe.params.forEach { spec -> ParamControl(spec, params[spec.key] ?: spec.default) { params[spec.key] = it } }
+        hoursText(recipe, params.toMap())?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         val groups = recipe.rules.flatMap { it.actions }.filterIsInstance<BlockGroups>().flatMap { it.groups }.distinct()
         if (groups.isNotEmpty()) {
             Text("Apps to block", style = MaterialTheme.typography.titleMedium)

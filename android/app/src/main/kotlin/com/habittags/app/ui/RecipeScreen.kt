@@ -1,5 +1,6 @@
 package com.habittags.app.ui
 
+import com.habittags.core.store.manualTag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +29,7 @@ fun RecipeScreen(recipeId: String, onInstall: () -> Unit, onEdit: () -> Unit) {
         Text(recipe.title, style = MaterialTheme.typography.headlineSmall)
         Text(recipe.description)
         Text("Where to put it: ${recipe.placementHint}", style = MaterialTheme.typography.bodyMedium)
+        hoursText(recipe, state.manualTag(recipe.id, recipe.title).params)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
         statLabel(snapshot.stats[recipe.id]).forEach { Text(it, style = MaterialTheme.typography.labelLarge) }
         if (recipeId in state.installedRecipes) {
             Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text("Edit") }
