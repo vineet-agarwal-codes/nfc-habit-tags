@@ -46,7 +46,7 @@ class AppEngineTest {
     @Test
     fun tagTapsToggleAndUnknownTags() {
         val e = engine()
-        val id = e.newTagId()
+        val id = e.createTagId()
         assertEquals("unknownTag", e.tap(id, at("10:00"), tz).kind)
         e.linkTag(id, "desk-deep-work")
         assertTrue(e.isInstalled("desk-deep-work"))

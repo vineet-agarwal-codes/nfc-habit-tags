@@ -20,7 +20,7 @@ final class HabitTagsTests: XCTestCase {
         let out = e.startManually(recipeId: "desk-deep-work", force: false, nowMs: now, tzId: "Asia/Kolkata")
         XCTAssertEqual(out.kind, "started")
         XCTAssertEqual(e.activeModes(nowMs: now, tzId: "Asia/Kolkata").count, 1)
-        let tagId = e.newTagId()
+        let tagId = e.createTagId()
         XCTAssertEqual(e.tagIdFromUrl(url: e.tagUrl(tagId: tagId)), tagId)
         XCTAssertFalse(AppEngine.Companion.shared.isReadableState(text: "garbage"))
     }

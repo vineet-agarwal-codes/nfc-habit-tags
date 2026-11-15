@@ -227,7 +227,7 @@ class AppEngine(stateJson: String?, bundledCatalogJson: String, cachedSnapshotJs
 
     // --- Tags ----------------------------------------------------------------------------------
 
-    fun newTagId(): String = TagPayload.newTagId()
+    fun createTagId(): String = TagPayload.newTagId()
     fun tagUrl(tagId: String): String = TagPayload.urlFor(tagId)
     fun tagIdFromUrl(url: String): String? = TagPayload.parseUrl(url)
     fun tagIdFromText(text: String): String? = TagPayload.parseText(text)

@@ -216,7 +216,7 @@ final class AppModel: ObservableObject {
     // MARK: - NFC
 
     func writeTag(recipeId: String) {
-        let id = engine.newTagId()
+        let id = engine.createTagId()
         tags.write(url: engine.tagUrl(tagId: id)) { [weak self] result in
             guard let self else { return }
             switch result {
