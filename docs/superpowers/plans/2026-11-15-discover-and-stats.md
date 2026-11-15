@@ -15,7 +15,8 @@
 - Supabase URL `https://bfwyytbghnfwnikpcugx.supabase.co` and publishable key `sb_publishable_eKASnJMTC64q14v01LMnEQ_IgEQVup8` are public: committed as `BuildConfig.SUPABASE_URL` / `SUPABASE_KEY` and sent as the `apikey` header.
 - `SUPABASE_ACCESS_TOKEN` lives only in `~/.config/habit-tags/supabase.env` on the build VM. Never in the repo, CI, logs or commit messages. Scripts `source` that file.
 - Clients can read: published `recipes`, `app_groups`, `recipe_stats`. Clients can execute: `report_events`. Nothing else (RLS + revoked grants).
-- Events carry no times of day, tag IDs, labels or app lists. Days are the phone's local date `YYYY-MM-DD`.
+- Events carry no times of day, tag IDs, labels or app lists in this build.
+- **Time-zone rules (all code):** instants are stored as UTC (epoch ms or ISO-8601 with `Z`); a local date is never stored without the IANA zone it was computed in. Each tap log entry records the zone at tap time; a tap's `day` is its local date in *that* zone, so travelling or changing the phone's zone never re-buckets past taps. Every event envelope carries `tz` (IANA id, e.g. `Asia/Kolkata`) for the zone its `day` was computed in, and an optional `at` (UTC instant) reserved for future exact-time events. Recipe time windows stay wall-clock in the phone's current zone (a 22:00 rule means 22:00 wherever you are); auto-off and strict deadlines stay absolute instants. Use kotlinx-datetime only; never `System.currentTimeMillis()`-derived dates or the JVM default zone in core.
 - Report cadence: WorkManager periodic every 6 h (network connected) + on app foreground when the last success was more than 6 h ago.
 - Catalog freshness: fetch on every app foreground; Realtime subscription on `recipes` and `app_groups` while in foreground; any change → refetch (debounced 2 s).
 - `recipe_stats` refreshed hourly by pg_cron; raw `events`, `daily_usage` older than 90 days deleted daily.
@@ -31,7 +32,7 @@
 1. A remote recipe document that fails to parse or needs a newer schema → that recipe is skipped (installed copies show "Update the app to use this"), the rest of the catalog still loads (Task 6 table cases).
 2. An installed recipe is unpublished or deleted by the author → taps keep working from the last cached copy; it stays in My recipes and never shows in Discover (Task 6 `mergeCatalog` cases).
 3. The same report is retried after the server already applied it → `daily_usage` and `device_installs` are unchanged, not doubled (Task 2 SQL test `retry is idempotent`).
-4. Taps around local midnight and after a timezone change → counted on the phone's local date at the time of the tap (Task 5 cases with taps at 23:59 / 00:01 and a TZ change).
+4. Taps around local midnight and after a time-zone change → each counted on its local date in the zone recorded at tap time, with that `tz` on the event; a later zone change doesn't move earlier taps (Task 5 cases: 23:59 / 00:01 in Asia/Kolkata; taps in Asia/Kolkata then a report built in Europe/London; a DST-transition day in Europe/London).
 5. First launch offline → bundled catalog, no stats labels, no crash; the report stays pending and is sent later (Task 8 e2e with fixture backend in `offline` mode).
 
 ---
@@ -106,11 +107,11 @@ android/app/src/debug/assets/fixture_backend/{recipes,app_groups,recipe_stats}.j
 **Interfaces:**
 - Consumes: `recipes` (Task 1)
 - Produces:
-  - `events(id bigserial primary key, device_id uuid not null, type text not null, v int not null, day date, payload jsonb not null, received_at timestamptz not null default now())`, index on `(type, day)`.
+  - `events(id bigserial primary key, device_id uuid not null, type text not null, v int not null, day date, tz text, at timestamptz, payload jsonb not null, received_at timestamptz not null default now())`, index on `(type, day)`.
   - `device_installs(device_id uuid, recipe_id text, last_seen date not null, primary key (device_id, recipe_id))`.
   - `daily_usage(device_id uuid, recipe_id text, day date, taps int not null, primary key (device_id, recipe_id, day))`.
   - All three: RLS on, no policies, `revoke all … from anon, authenticated`.
-  - `report_events(device_id uuid, events jsonb) returns int` (count of events stored) — `security definer`, `set search_path = public`, `grant execute … to anon, authenticated`. Per event: skip if not an object, payload > 4 KB, or `day` outside [current_date − 14, current_date + 1]; insert into `events`; then:
+  - `report_events(device_id uuid, events jsonb) returns int` (count of events stored) — `security definer`, `set search_path = public`, `grant execute … to anon, authenticated`. Per event: skip if not an object, payload > 4 KB, `day` set without a valid `tz` (checked against `pg_timezone_names`), or `day` outside [(now() at time zone tz)::date − 14, (now() at time zone tz)::date + 1]; insert into `events`; then:
     - `installed_snapshot` v1: `delete from device_installs where device_id = $1`; insert one row per ID in `payload.recipes` (first 200, only IDs present in `recipes`), `last_seen = current_date`.
     - `tap_count` v1: if `payload.recipe` exists in `recipes` and `0 ≤ count ≤ 500` → upsert `daily_usage` setting `taps = excluded.taps`.
     - other types: stored in `events` only.
@@ -140,7 +141,7 @@ android/app/src/debug/assets/fixture_backend/{recipes,app_groups,recipe_stats}.j
 - Consumes: Task 2 tables
 - Produces:
   - `create extension if not exists pg_cron`.
-  - Materialized view `recipe_stats(recipe_id text, weekly_active int, installs int, refreshed_at timestamptz)` with a unique index on `recipe_id`: one row per published recipe; `weekly_active` = distinct `device_id` in `daily_usage` with `taps > 0` and `day >= current_date - 6`; `installs` = distinct `device_id` in `device_installs` with `last_seen >= current_date - 30`; both exclude `device_id::text like '00000000-0000-0000-0000-%'`.
+  - Materialized view `recipe_stats(recipe_id text, weekly_active int, installs int, refreshed_at timestamptz)` with a unique index on `recipe_id`: one row per published recipe; `weekly_active` = distinct `device_id` in `daily_usage` with `taps > 0` and `day >= (now() at time zone tz)::date - 6` (each row judged in its own zone; `daily_usage` gains a `tz text not null` column); `installs` = distinct `device_id` in `device_installs` with `last_seen >= current_date - 30`; both exclude `device_id::text like '00000000-0000-0000-0000-%'`.
   - `grant select on recipe_stats to anon, authenticated`.
   - Cron jobs: `refresh-recipe-stats` `5 * * * *` → `refresh materialized view concurrently recipe_stats`; `purge-old-usage` `17 3 * * *` → delete `events` with `received_at < now() - interval '90 days'` and `daily_usage` with `day < current_date - 90`.
   - `realtime_smoke.mjs`: opens `wss://bfwyytbghnfwnikpcugx.supabase.co/realtime/v1/websocket?apikey=<publishable>&vsn=1.0.0` (Node 22 global `WebSocket`), joins `realtime:catalog` with `postgres_changes` for `recipes` and `app_groups`, then (via `sql.sh`) updates `updated_at` of a recipe; exits 0 if a `postgres_changes` message arrives within 10 s, else 1. Changes only reach the client if the row is visible under RLS, so it touches a published seed row.
@@ -166,8 +167,8 @@ android/app/src/debug/assets/fixture_backend/{recipes,app_groups,recipe_stats}.j
 
 **Interfaces:**
 - Produces:
-  - `TapLogEntry(atMs: Long, tagId: String, label: String, recipeId: String? = null)` — taps written by `TapHandler` set `recipeId`; `Log` action entries leave it null and are never reported.
-  - `@Serializable data class UsageEvent(val type: String, val v: Int, val day: String?, val payload: JsonObject)` in `usage/UsageEvents.kt` (model only; Task 5 adds the builders).
+  - `TapLogEntry(atMs: Long, tagId: String, label: String, recipeId: String? = null, zone: String? = null)` — `zone` = `TimeZone.currentSystemDefault().id` at tap time; entries without it (pre-upgrade) use the report's zone — taps written by `TapHandler` set `recipeId`; `Log` action entries leave it null and are never reported.
+  - `@Serializable data class UsageEvent(val type: String, val v: Int, val day: String?, val tz: String?, val at: String? = null, val payload: JsonObject)` — `tz` required whenever `day` is set in `usage/UsageEvents.kt` (model only; Task 5 adds the builders).
   - `AppState` gains: `stateVersion: Int = 2`, `installedRecipes: Set<String> = emptySet()`, `deviceId: String? = null`, `lastReportMs: Long = 0`, `pendingEvents: List<UsageEvent> = emptyList()`.
   - `StateCodec.decode` applies `migrate(state)`: if the decoded JSON has no `stateVersion` (v1) → `installedRecipes = tags.values.map { it.recipeId }.toSet()`, `stateVersion = 2`. Decoding treats a missing `stateVersion` as 1 (the data class default stays 2 for fresh state).
   - `fun AppState.withDeviceId(newId: () -> String): AppState` — sets `deviceId` once if null.
@@ -191,7 +192,7 @@ withDeviceId on null → set ; on existing → unchanged
 **Interfaces:**
 - Produces:
   - `const val REPORT_INTERVAL_MS = 6 * 60 * 60 * 1000L`, `const val MAX_REPORT_DAYS = 14`
-  - `fun buildReport(state: AppState, now: Instant, tz: TimeZone): List<UsageEvent>` = `state.pendingEvents` + one `installed_snapshot` (payload `{"recipes": [...sorted installedRecipes]}`, day = today) + one `tap_count` per (recipeId, local day) from `tapLog` entries with non-null `recipeId`, for days ≥ max(today − 13, local day of `lastReportMs` if > 0), count = number of entries that day (all days counted fully, so re-sends are idempotent).
+  - `fun buildReport(state: AppState, now: Instant, tz: TimeZone): List<UsageEvent>` = `state.pendingEvents` + one `installed_snapshot` (payload `{"recipes": [...sorted installedRecipes]}`, day = today) + one `tap_count` per (recipeId, zone, local day-in-that-zone) from `tapLog` entries with non-null `recipeId`, each event carrying that `tz`, for days ≥ max(today − 13, local day of `lastReportMs` if > 0), count = number of entries that day (all days counted fully, so re-sends are idempotent).
   - `fun reportDue(state: AppState, nowMs: Long): Boolean` = `nowMs - state.lastReportMs >= REPORT_INTERVAL_MS`
   - `fun AppState.afterReportSent(nowMs: Long): AppState` = `copy(lastReportMs = nowMs, pendingEvents = emptyList())`
 
