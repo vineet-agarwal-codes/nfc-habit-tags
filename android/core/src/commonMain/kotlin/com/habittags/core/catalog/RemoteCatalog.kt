@@ -4,6 +4,7 @@ import com.habittags.core.recipe.AppGroup
 import com.habittags.core.recipe.Catalog
 import com.habittags.core.recipe.CatalogJson
 import com.habittags.core.recipe.Recipe
+import com.habittags.core.recipe.validate
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
@@ -55,7 +56,15 @@ fun decodeRemoteCatalog(recipesJson: String, groupsJson: String, statsJson: Stri
             }
         }.getOrNull()
     } ?: emptyMap()
-    return CatalogSnapshot(Catalog(recipes, groups), meta, stats, fetchedAtMs)
+    return CatalogSnapshot(Catalog(recipes, groups), meta, stats, fetchedAtMs).withoutInvalidRecipes()
+}
+
+/** Drops recipes that would throw at tap or edit time; also applied to the on-disk cache. */
+fun CatalogSnapshot.withoutInvalidRecipes(): CatalogSnapshot {
+    val (valid, invalid) = catalog.recipes.partition { validate(it) == null }
+    if (invalid.isEmpty()) return this
+    val dropped = invalid.map { it.id }.toSet()
+    return copy(catalog = catalog.copy(recipes = valid), meta = meta - dropped)
 }
 
 /** The fresh catalog, plus installed recipes the author removed (kept from [previous], marked retired). */

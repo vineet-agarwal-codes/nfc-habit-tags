@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.habittags.core.catalog.CatalogSnapshot
 import com.habittags.core.catalog.mergeCatalog
+import com.habittags.core.catalog.withoutInvalidRecipes
 import com.habittags.core.recipe.CatalogJson
 import com.habittags.core.recipe.parseCatalog
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +32,7 @@ class CatalogRepository(
     private var pending: Job? = null
 
     private fun loadLocal(): CatalogSnapshot =
-        runCatching { CatalogJson.decodeFromString(CatalogSnapshot.serializer(), cache.readText()) }.getOrNull()
+        runCatching { CatalogJson.decodeFromString(CatalogSnapshot.serializer(), cache.readText()).withoutInvalidRecipes() }.getOrNull()
             ?: CatalogSnapshot(parseCatalog(context.assets.open("catalog.json").bufferedReader().use { it.readText() }))
 
     suspend fun refresh() = refreshLock.withLock {
