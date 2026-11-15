@@ -56,6 +56,7 @@ fun TagDetailScreen(tagId: String, onDone: () -> Unit) {
             catalog?.recipes.orEmpty().filter(::isUsable).forEach { r ->
                 DropdownMenuItem(text = { Text(r.title) }, onClick = {
                     edit { it.copy(recipeId = r.id, params = mergeParams(it.params, r.params)) }
+                    app.update { it.copy(installedRecipes = it.installedRecipes + r.id) }
                     choosing = false
                 })
             }

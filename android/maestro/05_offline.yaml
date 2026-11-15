@@ -1,0 +1,11 @@
+appId: com.habittags.app
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "Discover"
+    timeout: 10000
+- assertVisible: "Desk: Deep Work"
+- assertVisible: "Bed: Sleep Mode"
+- assertNotVisible: "Used by.*"
+- assertNotVisible: "Plant: Water me"
+- takeScreenshot: offline_discover

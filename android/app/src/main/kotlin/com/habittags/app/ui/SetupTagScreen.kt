@@ -15,28 +15,31 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.habittags.core.catalog.discoverOrder
 import com.habittags.core.recipe.isUsable
+import kotlinx.datetime.Clock
 
+/** A tapped tag this phone doesn't know: pick what it should do (installed recipes first). */
 @Composable
-fun CatalogScreen(setupTagId: String?, onPick: (String) -> Unit) {
-    val catalog by LocalContext.current.app().catalog.collectAsState()
+fun SetupTagScreen(onPick: (String) -> Unit) {
+    val app = LocalContext.current.app()
+    val snapshot by app.snapshot.collectAsState()
+    val state by app.state.collectAsState()
+    val installed = snapshot.catalog.recipes.filter { it.id in state.installedRecipes && isUsable(it) }.sortedBy { it.title }
+    val choices = installed + discoverOrder(snapshot, state.installedRecipes, Clock.System.now())
+
     LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text(if (setupTagId != null) "Set up this tag" else "Choose a recipe", style = MaterialTheme.typography.headlineSmall)
-            if (setupTagId != null) Text("This tag isn't set up on this phone yet. Pick what it should do.")
+            Text("Set up this tag", style = MaterialTheme.typography.headlineSmall)
+            Text("This tag isn't set up on this phone yet. Pick what it should do.")
         }
-        items(catalog?.recipes.orEmpty(), key = { it.id }) { recipe ->
-            val usable = isUsable(recipe)
-            Card(
-                Modifier.fillMaxWidth().alpha(if (usable) 1f else 0.5f).clickable(enabled = usable) { onPick(recipe.id) },
-            ) {
+        items(choices, key = { it.id }) { recipe ->
+            Card(Modifier.fillMaxWidth().clickable { onPick(recipe.id) }) {
                 Column(Modifier.padding(16.dp)) {
                     Text(recipe.title, style = MaterialTheme.typography.titleMedium)
-                    Text(recipe.description, style = MaterialTheme.typography.bodyMedium)
-                    if (!usable) Text("Update the app to use this", style = MaterialTheme.typography.labelLarge)
+                    Text(recipe.description, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
                 }
             }
         }

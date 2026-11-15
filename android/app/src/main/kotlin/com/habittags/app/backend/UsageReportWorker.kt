@@ -11,10 +11,12 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.habittags.app.HabitTagsApp
+import com.habittags.core.store.withDeviceId
 import com.habittags.core.usage.afterReportSent
 import com.habittags.core.usage.buildReport
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class UsageReportWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
@@ -38,8 +40,8 @@ object UsageReporting {
     /** Sends the current report; true when the server accepted it. */
     suspend fun sendNow(context: Context): Boolean {
         val app = HabitTagsApp.from(context)
-        val state = app.state.value
-        val deviceId = state.deviceId ?: return false
+        val state = app.update { it.withDeviceId { UUID.randomUUID().toString() } }
+        val deviceId = state.deviceId!!
         val now = Clock.System.now()
         return runCatching { app.backend.report(deviceId, buildReport(state, now, TimeZone.currentSystemDefault())) }
             .onSuccess {

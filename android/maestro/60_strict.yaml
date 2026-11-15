@@ -3,6 +3,7 @@ appId: com.habittags.app
 - openLink: "habittags-debug://param/last/strictMinutes/45"
 - launchApp:
     stopApp: false
+- tapOn: "My recipes"
 - tapOn: "Desk: Deep Work"
 - assertVisible: "Can't turn off with the tag for: 45 min"
 - back
@@ -11,10 +12,11 @@ appId: com.habittags.app
 - launchApp:
     stopApp: false
 - assertVisible: "On now"
-- assertVisible: "Strict: .* min left"
+- assertVisible: "Desk: Deep Work · strict, .* min left"
 - takeScreenshot: strict
-- tapOn:
-    text: "Desk: Deep Work"
-    index: 1
-- assertVisible: "This mode is on. End it before switching recipe or removing the tag."
+- tapOn: "My recipes"
+- tapOn: "Desk: Deep Work"
+- scrollUntilVisible:
+    element: "Turn this mode off first"
+- assertVisible: "Uninstall"
 - back

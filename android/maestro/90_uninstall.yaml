@@ -1,0 +1,13 @@
+appId: com.habittags.app
+---
+- launchApp:
+    stopApp: false
+- tapOn: "My recipes"
+- tapOn: "Desk: Deep Work"
+- scrollUntilVisible:
+    element: "Uninstall"
+- tapOn: "Uninstall"
+- tapOn: "Discover"
+- scrollUntilVisible:
+    element: "Desk: Deep Work"
+- takeScreenshot: after_uninstall

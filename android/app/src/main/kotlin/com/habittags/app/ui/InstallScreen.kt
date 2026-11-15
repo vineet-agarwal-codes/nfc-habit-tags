@@ -15,6 +15,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,6 +68,10 @@ fun InstallScreen(recipeId: String, setupTagId: String?, onDone: () -> Unit) {
         } else {
             Text("NTAG213, 215 or 216 tags work best.", style = MaterialTheme.typography.bodySmall)
             Button(onClick = { writingTagId = TagPayload.newTagId() }, enabled = ready, modifier = Modifier.fillMaxWidth()) { Text("Write to a tag") }
+            TextButton(onClick = {
+                app.update { it.copy(installedRecipes = it.installedRecipes + recipe.id) }
+                onDone()
+            }, modifier = Modifier.fillMaxWidth()) { Text("Skip for now") }
         }
     }
 

@@ -1,9 +1,14 @@
 appId: com.habittags.app
 ---
-- launchApp
-- assertVisible: "Habit Tags"
-- tapOn: "Add a tag"
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible: "Plant: Water me"
+    timeout: 10000
+- scrollUntilVisible:
+    element: "Desk: Deep Work"
 - tapOn: "Desk: Deep Work"
+- tapOn: "Install"
 - scrollUntilVisible:
     element: "Add app"
 - tapOn:
@@ -16,7 +21,12 @@ appId: com.habittags.app
     element: "Write to a tag"
 - tapOn: "Write to a tag"
 - extendedWaitUntil:
-    visible: "My tags"
+    visible: "1 tag"
     timeout: 10000
+- assertVisible: "Uninstall"
+- takeScreenshot: first_run_edit
+- back
+- tapOn: "My recipes"
 - assertVisible: "Desk: Deep Work"
-- takeScreenshot: first_run
+- tapOn: "Discover"
+- assertNotVisible: "Desk: Deep Work"

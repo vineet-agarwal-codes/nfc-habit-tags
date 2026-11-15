@@ -37,6 +37,10 @@ adb logcat -c
 adb install -r -g app/build/outputs/apk/debug/app-debug.apk
 adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 grant
+# Before the app's first launch: start in the debug "offline" backend so no test run ever
+# reaches the production project (debug builds default to the real backend).
+adb shell "run-as $PKG sh -c 'mkdir -p shared_prefs && echo \"<map><string name=\\\"backend\\\">offline</string></map>\" > shared_prefs/debug.xml'"
+adb shell run-as $PKG cat shared_prefs/debug.xml
 
 adb shell am instrument -w -r $PKG.test/androidx.test.runner.AndroidJUnitRunner > "$OUT/instrumented.txt" 2>&1
 cat "$OUT/instrumented.txt"
@@ -45,14 +49,23 @@ grep -q "OK (" "$OUT/instrumented.txt" || fail "instrumented tests"
 grant
 adb shell cmd package query-activities -a android.intent.action.MAIN -c android.intent.category.LAUNCHER | grep "packageName=" | sort -u > "$OUT/launcher_apps.txt"
 debug_link() { adb shell am start -W -a android.intent.action.VIEW -d "habittags-debug://$1" $PKG > /dev/null; }
+reports() { adb shell run-as $PKG cat files/debug_reports.jsonl > "$OUT/debug_reports.jsonl" 2>/dev/null; }
 
-# CI never talks to the production backend: fixture recipes/stats, reports written to a local file.
+# First launch offline: bundled recipes, no stats, and the report stays unsent.
+flow 05_offline
+debug_link report-now
+reports && fail "a report was written while offline"
+
+# From here on: fixture recipes/stats, reports written to a local file.
 debug_link backend/fixture
+debug_link report-now
+reports || fail "pending report not sent once back online"
 flow 10_first_run
+flow 15_discover
 flow 20_tap_toggle
 
 debug_link report-now
-adb shell run-as $PKG cat files/debug_reports.jsonl > "$OUT/debug_reports.jsonl" || true
+reports
 node -e '
   const lines = require("fs").readFileSync(process.argv[1], "utf8").trim().split("\n").filter(Boolean);
   const events = lines.flatMap((l) => JSON.parse(l).events);
@@ -97,6 +110,7 @@ flow 20_tap_toggle
 sleep 3
 [ "$(zen)" != "0" ] || fail "user's own DND was turned off when the mode ended (zen_mode=$(zen))"
 adb shell cmd notification set_dnd off
+flow 90_uninstall
 
 adb logcat -d > "$OUT/logcat.txt"
 mv ./*.png "$OUT/" 2>/dev/null || true

@@ -1,0 +1,21 @@
+appId: com.habittags.app
+---
+- launchApp:
+    stopApp: false
+- tapOn: "Discover"
+- assertVisible: "Plant: Water me"
+- assertVisible:
+    text: "Gym Bag: Workout"
+    below: "Plant: Water me"
+- assertVisible: "Used by 40 people this week"
+- assertVisible: "100 installs"
+- assertVisible:
+    text: "Bed: Sleep Mode"
+    below: "Gym Bag: Workout"
+- assertVisible: "Used by 30 people this week"
+- scrollUntilVisible:
+    element: "Front Door: Leaving Home"
+- assertVisible:
+    text: "New"
+    below: "Front Door: Leaving Home"
+- takeScreenshot: discover
