@@ -33,6 +33,7 @@ Drive adoption: people should keep discovering and installing more recipes. The 
 - Collecting anything that identifies the person or reveals their phone usage beyond recipe-level counts. No account link, no blocked-app lists, no exact tap times, no IP stored in our tables.
 - Ranking that is trivially gamed by one device (one device counts at most once per recipe per week).
 - Discover breaking offline: no network still shows recipes (bundled/cached), just without stats.
+- **Vineet, 2026-11-15:** usage and location data may leave the phone; a privacy policy and Play data-safety update are required before public release (no privacy policy exists yet).
 
 ## Approaches considered
 

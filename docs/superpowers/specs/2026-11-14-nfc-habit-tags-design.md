@@ -44,6 +44,7 @@ Success for v1: a new user with a blank tag goes from install to a working "desk
 - Setup that feels like configuring Tasker. Every extra permission screen or manual step must be justified.
 - Uploading the user's app usage or blocked-app lists to our servers. Personal config stays on device (sync of tag↔recipe links is fine).
 - A block that the user can't escape in an emergency. There is always a way to end a block from the app.
+- **Vineet, 2026-11-15:** usage and location data may leave the phone; a privacy policy and Play data-safety update are required before public release (no privacy policy exists yet).
 
 ## Approaches considered
 
