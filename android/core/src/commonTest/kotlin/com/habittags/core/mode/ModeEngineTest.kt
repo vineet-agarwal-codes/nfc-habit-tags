@@ -11,7 +11,10 @@ import com.habittags.core.fixtures.Fixtures.ms
 import com.habittags.core.fixtures.Fixtures.recipes
 import com.habittags.core.fixtures.Fixtures.tag
 import com.habittags.core.fixtures.Fixtures.zone
+import com.habittags.core.recipe.BlockGroups
+import com.habittags.core.recipe.Dnd
 import com.habittags.core.recipe.Log
+import com.habittags.core.recipe.ParamSpec
 import com.habittags.core.recipe.OpenApp
 import com.habittags.core.recipe.Recipe
 import com.habittags.core.recipe.Rule
@@ -124,6 +127,57 @@ class ModeEngineTest {
         val logOnly = desk.copy(rules = listOf(Rule(actions = listOf(Log("day")))))
         assertEquals(TapResult.Ran(listOf(Log("day"))), tap(emptyMap(), deskTag, logOnly, "10:00"))
     }
+
+    @Test
+    fun userTimeWindowsDecideWhenNightRecipesStart() {
+        val night = nightBed()
+        val cases = listOf(
+            // user values, time, starts?
+            Triple(emptyMap<String, Int>(), "21:00", true),
+            Triple(emptyMap<String, Int>(), "15:10", false),
+            Triple(mapOf("sleepStart" to 900), "15:10", true), // 15:00-05:00
+            Triple(mapOf("sleepEnd" to 1080), "15:10", true), // 21:00-18:00 wraps, covers the afternoon
+            Triple(mapOf("sleepStart" to 1380), "22:00", false), // 23:00-05:00
+        )
+        for ((values, time, starts) in cases) {
+            val result = tap(emptyMap(), tag("b1", night, values), night, time)
+            assertEquals(starts, result is TapResult.Started, "$values at $time: $result")
+        }
+        val outside = assertIs<TapResult.OutsideHours>(tap(emptyMap(), tag("b1", night, mapOf("sleepStart" to 1380, "sleepEnd" to 420)), night, "15:10"))
+        assertEquals(listOf("23:00-07:00"), outside.windows)
+    }
+
+    @Test
+    fun startAnywayForcesTheModeRuleOutsideHours() {
+        val night = nightBed()
+        val bedTag = tag("b1", night)
+        val forced = assertIs<TapResult.Started>(ModeEngine.startManually(emptyMap(), bedTag, night, at("15:10"), zone, groups, force = true))
+        val mode = forced.state.getValue("b1")
+        assertEquals(setOf("social"), mode.blockedGroups)
+        assertTrue(mode.dnd)
+        assertEquals(ms("15:10") + 480 * MIN, mode.autoOffAt)
+        assertEquals(emptyList(), forced.effects)
+        // Without force the same start explains the hours instead.
+        assertIs<TapResult.OutsideHours>(ModeEngine.startManually(emptyMap(), bedTag, night, at("15:10"), zone, groups))
+        // Forcing inside hours is just a normal start.
+        assertIs<TapResult.Started>(ModeEngine.startManually(emptyMap(), bedTag, night, at("22:00"), zone, groups, force = true))
+        // A one-shot or windowless recipe is unaffected by force.
+        assertEquals(tap(emptyMap(), tag("g", gym), gym, "15:10"), ModeEngine.startManually(emptyMap(), tag("g", gym), gym, at("15:10"), zone, groups, force = true))
+    }
+
+    private fun nightBed() = bed.copy(
+        schemaVersion = 2,
+        params = listOf(
+            ParamSpec("autoOffMinutes", "duration", "Auto-off", 480, 240, 720),
+            ParamSpec("sleepStart", "time", "Sleep from", 1260, 0, 1439),
+            ParamSpec("sleepEnd", "time", "until", 300, 0, 1439),
+        ),
+        autoOffMinutes = JsonPrimitive("{{autoOffMinutes}}"),
+        rules = listOf(
+            Rule(When("{{sleepStart}}-{{sleepEnd}}"), listOf(BlockGroups(listOf("social")), Dnd)),
+            Rule(actions = listOf(Log("day"))),
+        ),
+    )
 
     @Test
     fun runningModeKeepsAppsResolvedAtStart() {

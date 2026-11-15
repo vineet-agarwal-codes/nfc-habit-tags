@@ -1,6 +1,7 @@
 package com.habittags.core.rules
 
 import com.habittags.core.recipe.Log
+import com.habittags.core.recipe.ParamSpec
 import com.habittags.core.recipe.Rule
 import com.habittags.core.recipe.When
 import kotlinx.datetime.LocalTime
@@ -37,5 +38,42 @@ class TimeWindowTest {
     @Test
     fun malformedWindowThrows() {
         assertFailsWith<IllegalArgumentException> { selectRule(listOf(rule("25:00-06:00", "A")), t("12:00")) }
+    }
+
+    private val timeSpecs = listOf(
+        ParamSpec("sleepStart", "time", "Sleep from", 1260, 0, 1439),
+        ParamSpec("sleepEnd", "time", "until", 300, 0, 1439),
+    )
+
+    @Test
+    fun placeholderWindowsResolveFromParams() {
+        // window, user values, expected resolved window
+        val cases = listOf(
+            Triple("{{sleepStart}}-{{sleepEnd}}", emptyMap<String, Int>(), "21:00-05:00"),
+            Triple("{{sleepStart}}-{{sleepEnd}}", mapOf("sleepStart" to 1380, "sleepEnd" to 420), "23:00-07:00"),
+            Triple("{{sleepStart}}-06:30", mapOf("sleepStart" to 0), "00:00-06:30"),
+            Triple("{{sleepStart}}-{{sleepEnd}}", mapOf("sleepStart" to 5000, "sleepEnd" to -3), "23:59-00:00"),
+            Triple("22:00-06:00", mapOf("sleepStart" to 0), "22:00-06:00"),
+        )
+        for ((window, values, expected) in cases) assertEquals(expected, resolveWindow(window, timeSpecs, values), "$window $values")
+    }
+
+    @Test
+    fun placeholderWindowSelectionWrapsMidnight() {
+        val rules = listOf(rule("{{sleepStart}}-{{sleepEnd}}", "night"), rule(null, "day"))
+        val user = mapOf("sleepStart" to 1380, "sleepEnd" to 420) // 23:00-07:00
+        val cases = mapOf("22:59" to "day", "23:00" to "night", "03:00" to "night", "06:59" to "night", "07:00" to "day", "15:10" to "day")
+        for ((time, expected) in cases) assertEquals(expected, label(selectRule(rules, t(time), timeSpecs, user)), time)
+    }
+
+    @Test
+    fun unknownPlaceholderInWindowThrows() {
+        assertFailsWith<IllegalArgumentException> { resolveWindow("{{nope}}-05:00", timeSpecs, emptyMap()) }
+    }
+
+    @Test
+    fun formatsMinutesOfDay() {
+        val cases = mapOf(0 to "00:00", 300 to "05:00", 1260 to "21:00", 1439 to "23:59", 65 to "01:05")
+        for ((minutes, expected) in cases) assertEquals(expected, formatMinutes(minutes))
     }
 }

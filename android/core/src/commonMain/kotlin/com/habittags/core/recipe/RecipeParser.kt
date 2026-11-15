@@ -1,5 +1,6 @@
 package com.habittags.core.recipe
 
+import com.habittags.core.rules.resolveWindow
 import com.habittags.core.rules.windowContains
 import kotlinx.datetime.LocalTime
 import kotlinx.serialization.json.Json
@@ -37,13 +38,16 @@ fun validate(recipe: Recipe): String? {
     if (recipe.schemaVersion > SUPPORTED_SCHEMA_VERSION) return null
     recipe.params.firstOrNull { it.min > it.max || it.default !in it.min..it.max }
         ?.let { return "Param ${it.key}: default ${it.default} not within ${it.min}..${it.max}" }
+    recipe.params.firstOrNull { it.type == "time" && (it.min < 0 || it.max > 1439) }
+        ?.let { return "Time param ${it.key} must stay within 00:00..23:59" }
     val bound = listOf(recipe.autoOffMinutes, recipe.strictMinutes) +
         (recipe.rules.flatMap { it.actions } + recipe.endActions).filterIsInstance<Timer>().map { it.minutes }
     for (value in bound) {
         runCatching { bindInt(value, recipe.params, emptyMap()) }.exceptionOrNull()?.let { return it.message }
     }
     for (window in recipe.rules.mapNotNull { it.`when`?.time }) {
-        runCatching { windowContains(window, LocalTime(0, 0)) }.exceptionOrNull()?.let { return it.message }
+        runCatching { windowContains(resolveWindow(window, recipe.params, emptyMap()), LocalTime(0, 0)) }
+            .exceptionOrNull()?.let { return it.message }
     }
     return null
 }

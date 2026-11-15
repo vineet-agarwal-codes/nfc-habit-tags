@@ -15,7 +15,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-const val SUPPORTED_SCHEMA_VERSION = 1
+/** 2: params of type "time" (minutes since midnight) and `{{param}}` sides in rule time windows. */
+const val SUPPORTED_SCHEMA_VERSION = 2
 
 @Serializable
 data class Catalog(val recipes: List<Recipe>, val appGroups: List<AppGroup>)

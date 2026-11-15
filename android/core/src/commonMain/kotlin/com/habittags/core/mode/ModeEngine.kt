@@ -6,6 +6,7 @@ import com.habittags.core.recipe.Dnd
 import com.habittags.core.recipe.Mode
 import com.habittags.core.recipe.Recipe
 import com.habittags.core.recipe.bindInt
+import com.habittags.core.rules.resolveWindow
 import com.habittags.core.rules.selectRule
 import kotlinx.serialization.Serializable
 import kotlinx.datetime.Instant
@@ -53,6 +54,16 @@ object ModeEngine {
         now: Instant,
         timeZone: TimeZone = TimeZone.currentSystemDefault(),
         groups: Map<String, Set<String>> = emptyMap(),
+    ): TapResult = tap(active, tag, recipe, now, timeZone, groups, force = false)
+
+    private fun tap(
+        active: Map<String, ActiveMode>,
+        tag: InstalledTag?,
+        recipe: Recipe?,
+        now: Instant,
+        timeZone: TimeZone,
+        groups: Map<String, Set<String>>,
+        force: Boolean,
     ): TapResult {
         if (tag == null) return TapResult.UnknownTag
         if (recipe == null) return TapResult.RecipeUnavailable
@@ -64,14 +75,20 @@ object ModeEngine {
             if (strictUntil != null && nowMs < strictUntil) return TapResult.StrictRefused(strictUntil - nowMs)
             return TapResult.Ended(active - key, recipe.endActions)
         }
-        val actions = selectRule(recipe.rules, now.toLocalDateTime(timeZone).time)?.actions.orEmpty()
-        val effects = actions.filter { it !is BlockGroups && it !is Dnd }
-        if (recipe.mode == Mode.oneShot) return TapResult.Ran(effects)
-        // A toggle rule with nothing to keep on (e.g. a daytime tap on the bed tag) just runs its effects.
-        if (effects.size == actions.size) {
-            val windows = recipe.rules.filter { r -> r.actions.any { it is BlockGroups || it is Dnd } }.mapNotNull { it.`when`?.time }
-            return if (windows.isEmpty()) TapResult.Ran(effects) else TapResult.OutsideHours(windows, effects)
+        var actions = selectRule(recipe.rules, now.toLocalDateTime(timeZone).time, recipe.params, tag.params)?.actions.orEmpty()
+        if (recipe.mode == Mode.oneShot) return TapResult.Ran(actions.filter { it !is BlockGroups && it !is Dnd })
+        // A toggle rule with nothing to keep on (e.g. a daytime tap on the bed tag) just runs its effects,
+        // unless the user chose "Start anyway", which uses the recipe's mode rule regardless of its hours.
+        if (actions.none { it.keepsOn() }) {
+            val modeRule = recipe.rules.firstOrNull { r -> r.actions.any { it.keepsOn() } }
+            val windows = modeWindows(recipe, tag.params)
+            when {
+                force && modeRule != null -> actions = modeRule.actions
+                windows.isEmpty() -> return TapResult.Ran(actions)
+                else -> return TapResult.OutsideHours(windows, actions)
+            }
         }
+        val effects = actions.filter { !it.keepsOn() }
 
         val autoOff = bindInt(recipe.autoOffMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
         val strict = bindInt(recipe.strictMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
@@ -95,7 +112,7 @@ object ModeEngine {
             ?: active.values.firstOrNull { it.recipeId == tag.recipeId && it.isLive(nowMs) }?.tagId
             ?: tag.tagId
 
-    /** Starting from the app is a tap that may only start, never end, a mode. */
+    /** Starting from the app is a tap that may only start, never end, a mode; [force] ignores the recipe's hours. */
     fun startManually(
         active: Map<String, ActiveMode>,
         tag: InstalledTag,
@@ -103,11 +120,19 @@ object ModeEngine {
         now: Instant,
         timeZone: TimeZone = TimeZone.currentSystemDefault(),
         groups: Map<String, Set<String>> = emptyMap(),
+        force: Boolean = false,
     ): TapResult {
         val nowMs = now.toEpochMilliseconds()
         if (active.values.any { it.recipeId == tag.recipeId && it.isLive(nowMs) }) return TapResult.AlreadyOn
-        return onTap(active, tag, recipe, now, timeZone, groups)
+        return tap(active, tag, recipe, now, timeZone, groups, force)
     }
+
+    /** The "HH:MM-HH:MM" windows in which a toggle recipe turns on, resolved with the user's times. */
+    fun modeWindows(recipe: Recipe, userValues: Map<String, Int>): List<String> =
+        recipe.rules.filter { r -> r.actions.any { it.keepsOn() } }
+            .mapNotNull { r -> r.`when`?.let { resolveWindow(it.time, recipe.params, userValues) } }
+
+    private fun Action.keepsOn() = this is BlockGroups || this is Dnd
 
     fun expire(active: Map<String, ActiveMode>, nowMs: Long, recipes: (String) -> Recipe?): Pair<Map<String, ActiveMode>, List<Action>> {
         val (expired, remaining) = active.values.partition { it.autoOffAt != null && nowMs >= it.autoOffAt }

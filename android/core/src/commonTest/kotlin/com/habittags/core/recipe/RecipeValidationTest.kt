@@ -9,6 +9,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+private const val TIME_PARAMS =
+    """[{"key":"from","type":"time","label":"From","default":1260,"min":0,"max":1439},{"key":"to","type":"time","label":"Until","default":300,"min":0,"max":1439}]"""
+private const val DND = """[{"type":"dnd"}]"""
+
 class RecipeValidationTest {
     private fun doc(
         params: String = """[{"key":"autoOff","type":"duration","label":"Auto-off","default":90,"min":15,"max":480}]""",
@@ -35,6 +39,10 @@ class RecipeValidationTest {
             "bad time window" to (doc(whenTime = "25:00-06:00") to false),
             "unsupported action stays valid (shown as unusable)" to (doc(actions = """[{"type":"flashlight"}]""") to true),
             "newer schema is not checked" to (doc(whenTime = "later", schemaVersion = 99) to true),
+            "time params in a window" to (doc(params = TIME_PARAMS, autoOff = "90", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 2) to true),
+            "unknown time placeholder in a window" to (doc(params = TIME_PARAMS, autoOff = "90", whenTime = "{{from}}-{{nope}}", actions = DND, schemaVersion = 2) to false),
+            "time param past 23:59" to (doc(params = TIME_PARAMS.replace("\"max\":1439", "\"max\":1440"), autoOff = "90", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 2) to false),
+            "negative time param" to (doc(params = TIME_PARAMS.replace("\"min\":0", "\"min\":-1"), autoOff = "90", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 2) to false),
         )
         for ((name, case) in cases) {
             val (json, valid) = case
