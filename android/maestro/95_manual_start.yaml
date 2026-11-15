@@ -24,6 +24,8 @@ appId: com.habittags.app
 - assertVisible: "End now"
 - tapOn: "End now"
 - assertVisible: "End Desk: Deep Work early?"
+# The gate opens with the keyboard up; the first back would only close it.
+- hideKeyboard
 - back
 - openLink: "habittags-debug://expire-soon/app:desk-deep-work"
 - launchApp:
