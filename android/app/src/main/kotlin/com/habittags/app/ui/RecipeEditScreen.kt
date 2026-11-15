@@ -45,7 +45,7 @@ fun RecipeEditScreen(recipeId: String, onOpenTag: (String) -> Unit, onInstallFlo
         Text(recipe.title, style = MaterialTheme.typography.headlineSmall)
         if (snapshot.meta[recipeId]?.retired == true) Text("No longer offered", style = MaterialTheme.typography.labelLarge)
         if (running) Text("On now", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
-        else if (isUsable(recipe)) StartNowButton(recipe)
+        else if (isUsable(recipe)) StartNowButton(recipe, enabled = PermissionCards(recipe))
         val current = tags.firstOrNull()?.params ?: state.recipeParams[recipeId].orEmpty()
         recipe.params.forEach { spec ->
             ParamSlider(spec, (current[spec.key] ?: spec.default).coerceIn(spec.min, spec.max)) { v ->

@@ -53,7 +53,7 @@ fun MyRecipesScreen(onOpen: (String) -> Unit, onBrowse: () -> Unit) {
                     Text(tagCount(tags.size), style = MaterialTheme.typography.bodyMedium)
                     if (!isUsable(recipe)) Text("Update the app to use this", style = MaterialTheme.typography.labelLarge)
                     if (snapshot.meta[recipe.id]?.retired == true) Text("No longer offered", style = MaterialTheme.typography.labelLarge)
-                    if (!on && isUsable(recipe)) StartNowButton(recipe)
+                    if (!on && isUsable(recipe)) StartNowButton(recipe, onNeedsPermissions = { onOpen(recipe.id) })
                 }
             }
         }
@@ -66,11 +66,16 @@ fun tagCount(n: Int): String = when (n) {
     else -> "$n tags"
 }
 
-/** Starts (toggle) or runs (one-shot) the recipe without its tag, exactly like a tap. */
+/**
+ * Starts (toggle) or runs (one-shot) the recipe without its tag, exactly like a tap. A recipe installed
+ * with "Skip for now" may lack its permissions, so those are asked for first ([onNeedsPermissions]).
+ */
 @Composable
-fun StartNowButton(recipe: Recipe) {
+fun StartNowButton(recipe: Recipe, enabled: Boolean = true, onNeedsPermissions: () -> Unit = {}) {
     val context = LocalContext.current
-    OutlinedButton(onClick = { TapHandler.startManually(context, recipe.id) }) {
+    OutlinedButton(enabled = enabled, onClick = {
+        if (permissionsGranted(context, recipe)) TapHandler.startManually(context, recipe.id) else onNeedsPermissions()
+    }) {
         Text(if (recipe.mode == Mode.oneShot) "Run now" else "Start now")
     }
 }

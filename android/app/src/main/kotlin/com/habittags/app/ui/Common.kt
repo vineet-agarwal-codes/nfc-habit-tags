@@ -70,13 +70,9 @@ fun ParamSlider(spec: ParamSpec, value: Int, onChange: (Int) -> Unit) {
 
 private data class Needed(val label: String, val granted: Boolean, val intent: (Context) -> Intent)
 
-/** Just-in-time permissions: only what this recipe's actions need. Returns true when all are granted. */
-@Composable
-fun PermissionCards(recipe: Recipe): Boolean {
-    val context = LocalContext.current
-    rememberResumeTick()
+private fun neededPermissions(context: Context, recipe: Recipe): List<Needed> {
     val actions = recipe.rules.flatMap { it.actions }
-    val needed = buildList {
+    return buildList {
         if (actions.any { it is BlockGroups }) {
             add(Needed("Usage access (to see which app is open)", Permissions.hasUsageAccess(context)) { Permissions.usageAccessIntent() })
             add(Needed("Display over other apps (to cover blocked apps)", Permissions.hasOverlay(context)) { Permissions.overlayIntent(it) })
@@ -85,6 +81,16 @@ fun PermissionCards(recipe: Recipe): Boolean {
             add(Needed("Do Not Disturb access", Permissions.hasDndAccess(context)) { Permissions.dndAccessIntent() })
         }
     }
+}
+
+fun permissionsGranted(context: Context, recipe: Recipe): Boolean = neededPermissions(context, recipe).all { it.granted }
+
+/** Just-in-time permissions: only what this recipe's actions need. Returns true when all are granted. */
+@Composable
+fun PermissionCards(recipe: Recipe): Boolean {
+    val context = LocalContext.current
+    rememberResumeTick()
+    val needed = neededPermissions(context, recipe)
     needed.filterNot { it.granted }.forEach { need ->
         Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
