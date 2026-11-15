@@ -47,15 +47,22 @@ class RealtimeWatcher(
                         closed.complete(Unit)
                     }
                 })
-                socket = ws
+                synchronized(this@RealtimeWatcher) { socket = ws }
                 val heartbeat = launch {
                     while (isActive) {
                         delay(Realtime.HEARTBEAT_MS)
                         ws.send(Realtime.heartbeat(nextRef()))
                     }
                 }
-                closed.await()
-                heartbeat.cancel()
+                // stop() can run before the socket above was recorded; closing here on cancellation
+                // makes sure no socket outlives its loop.
+                try {
+                    closed.await()
+                } finally {
+                    heartbeat.cancel()
+                    ws.close(1000, null)
+                    synchronized(this@RealtimeWatcher) { if (socket === ws) socket = null }
+                }
                 delay(backoffMs)
                 backoffMs = (backoffMs * 2).coerceAtMost(MAX_BACKOFF_MS)
             }
