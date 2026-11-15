@@ -27,7 +27,10 @@ import androidx.compose.ui.unit.dp
 
 private data class LauncherApp(val packageName: String, val label: String)
 
-/** Shows the apps in one group (installed ones by name) and lets the user remove or add apps. */
+/**
+ * Shows the group's installed apps and lets the user remove or add apps. Listed apps that aren't
+ * installed stay in the group, so they're blocked if the user installs them later.
+ */
 @Composable
 fun GroupEditor(groupId: String) {
     val context = LocalContext.current
@@ -51,13 +54,18 @@ fun GroupEditor(groupId: String) {
 
     Column(Modifier.fillMaxWidth()) {
         Text(group.title, style = MaterialTheme.typography.titleSmall)
-        val shown = members.sortedBy { installed[it]?.label ?: "~$it" }
-        if (shown.isEmpty()) Text("No apps yet", style = MaterialTheme.typography.bodySmall)
-        shown.forEach { pkg ->
+        val shown = members.mapNotNull { installed[it] }.sortedBy { it.label.lowercase() }
+        if (shown.isEmpty()) Text("None of these apps are on your phone", style = MaterialTheme.typography.bodySmall)
+        shown.forEach { member ->
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(installed[pkg]?.label ?: "$pkg (not installed)", Modifier.weight(1f))
-                Switch(checked = true, onCheckedChange = { save(members - pkg) })
+                Text(member.label, Modifier.weight(1f))
+                Switch(checked = true, onCheckedChange = { save(members - member.packageName) })
             }
+        }
+        val notInstalled = members.size - shown.size
+        if (notInstalled > 0) {
+            val apps = if (notInstalled == 1) "1 more app" else "$notInstalled more apps"
+            Text("Also blocks $apps from this list if you install them later.", style = MaterialTheme.typography.bodySmall)
         }
         TextButton(onClick = { picking = true }) { Text("Add app") }
         Text("Changes apply the next time a mode starts.", style = MaterialTheme.typography.bodySmall)
