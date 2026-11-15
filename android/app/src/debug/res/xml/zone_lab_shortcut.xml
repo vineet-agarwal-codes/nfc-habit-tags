@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="zone_lab"
+        android:enabled="true"
+        android:icon="@drawable/ic_tag"
+        android:shortcutShortLabel="@string/zone_lab"
+        android:shortcutLongLabel="@string/zone_lab">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.habittags.app"
+            android:targetClass="com.habittags.app.zone.ZoneLabActivity" />
+    </shortcut>
+</shortcuts>

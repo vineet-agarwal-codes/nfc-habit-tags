@@ -1,6 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Zone lab (debug builds only) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+
     <application>
+        <activity
+            android:name=".zone.ZoneLabActivity"
+            android:exported="true"
+            android:label="Zone lab"
+            android:launchMode="singleTop"
+            android:taskAffinity="com.habittags.app.zonelab" />
+        <!-- Long-press the app icon → "Zone lab" (a shortcut, so the app keeps a single launcher entry). -->
+        <activity android:name=".ui.MainActivity">
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/zone_lab_shortcut" />
+        </activity>
+        <service
+            android:name=".zone.ZoneTrackingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+        <receiver
+            android:name=".zone.ZoneFeedbackReceiver"
+            android:exported="false" />
         <receiver
             android:name=".DebugTapReceiver"
             android:exported="true">

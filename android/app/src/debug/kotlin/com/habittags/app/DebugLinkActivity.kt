@@ -2,6 +2,7 @@ package com.habittags.app
 
 import com.habittags.core.store.APP_KEY_PREFIX
 import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import com.habittags.app.backend.UsageReporting
 import com.habittags.app.block.BlockController
@@ -11,7 +12,7 @@ import kotlinx.coroutines.runBlocking
  * Debug-only deep links so emulator flows can simulate what needs real hardware:
  * habittags-debug://tap/<tagId|last>, habittags-debug://gate-words/<n>, habittags-debug://expire-soon/<tagId|last>,
  * habittags-debug://param/<tagId|last|app:recipeId>/<key>/<value>, habittags-debug://backend/<real|fixture|offline>,
- * habittags-debug://report-now
+ * habittags-debug://report-now, habittags-debug://zone-fake/<spot|off>, habittags-debug://zone-lab
  */
 class DebugLinkActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,6 +28,8 @@ class DebugLinkActivity : Activity() {
                 runBlocking { app.catalogRepository.refresh() }
             }
             "report-now" -> runBlocking { UsageReporting.sendNow(this@DebugLinkActivity) }
+            "zone-lab" -> startActivity(Intent(this, com.habittags.app.zone.ZoneLabActivity::class.java))
+            "zone-fake" -> DebugSettings.setZoneFakeSpot(this, arg?.takeIf { it != "off" })
             "gate-words" -> arg?.toIntOrNull()?.let { DebugSettings.setGateWords(this, it) }
             "param" -> {
                 val (id, key, value) = uri.pathSegments.takeIf { it.size == 3 } ?: return finish()

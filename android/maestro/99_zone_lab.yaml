@@ -1,0 +1,34 @@
+appId: com.habittags.app
+---
+# Zone lab with the debug fake scanner: teach Bed and Desk, then "Where am I?" at Desk.
+- openLink: "habittags-debug://zone-fake/Bed"
+- openLink: "habittags-debug://zone-lab"
+- extendedWaitUntil:
+    visible: "Zone lab"
+    timeout: 10000
+- tapOn: "Bed"
+- tapOn: "Phone resting here"
+- tapOn: "Record Bed"
+- extendedWaitUntil:
+    visible: "Saved: Bed \\(resting\\)"
+    timeout: 60000
+- openLink: "habittags-debug://zone-fake/Desk"
+- openLink: "habittags-debug://zone-lab"
+- tapOn: "Desk"
+- tapOn: "Record Desk"
+- extendedWaitUntil:
+    visible: "Saved: Desk \\(resting\\)"
+    timeout: 60000
+- takeScreenshot: zone_lab_recorded
+- scrollUntilVisible:
+    element: "Right|Where am I\\?"
+    direction: DOWN
+- tapOn: "Where am I\\?"
+- extendedWaitUntil:
+    visible: "Desk \\d+%.*"
+    timeout: 20000
+- takeScreenshot: zone_lab_guess
+- tapOn: "Right"
+- extendedWaitUntil:
+    visible: "Thanks — saved."
+    timeout: 5000

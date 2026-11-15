@@ -20,4 +20,12 @@ object DebugSettings {
     fun setBackendMode(context: Context, mode: String) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("backend", mode).commit()
     }
+
+    /** Spot name the fake Wi-Fi scanner pretends to be at, or null for real scans. */
+    fun zoneFakeSpot(context: Context): String? =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("zoneFake", null)
+
+    fun setZoneFakeSpot(context: Context, spot: String?) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("zoneFake", spot).commit()
+    }
 }
