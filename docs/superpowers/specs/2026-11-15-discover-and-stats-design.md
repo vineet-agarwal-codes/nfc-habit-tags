@@ -90,7 +90,8 @@ On app open (and at most every 6 h in the background) the app fetches published 
 └─────────────────────────────────────────────┘
 ```
 
-- **Discover:** cards sorted by `weekly_active` desc, then `installs` desc, then `sort_hint`. Recipes with `weekly_active < 5` show "New" instead of small numbers (avoids "Used by 1 person"). No stats available (offline/never fetched) → bundled order, no numbers. When everything is installed: "You've installed every recipe — more coming soon."
+- **New-recipe boost (Vineet, 2026-11-15):** recipes published in the last 14 days are placed in the top 3 of Discover (newest first) regardless of stats, so they get a chance to collect usage; after 14 days they're ranked normally. Needs a `published_at` column on `recipes`.
+- **Discover:** other cards sorted by `weekly_active` desc, then `installs` desc, then `sort_hint`. Recipes with `weekly_active < 5` show "New" instead of small numbers (avoids "Used by 1 person"). No stats available (offline/never fetched) → bundled order, no numbers. When everything is installed: "You've installed every recipe — more coming soon."
 - **Recipe detail (not installed):** description, placement hint, stats, **Install** → settings (sliders) → apps to block (installed apps only, as now) → just-in-time permissions → **Write to a tag** (or "Skip for now" — recipe is still installed with no tag yet) → lands on its My recipes entry.
 - **My recipes:** installed recipes (installed = recipe has been installed on this phone, with or without tags). Each shows linked tags and whether a mode is on. **Edit** opens: settings, apps to block, tags list (rename, rewrite, remove), **Write another tag**, **Uninstall** (removes its tags' links; disabled while its mode is on).
 - **Unknown tag tapped:** "Set up this tag" picker listing all usable recipes (installed first), then the same settings flow without writing.
