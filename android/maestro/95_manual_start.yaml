@@ -18,6 +18,8 @@ appId: com.habittags.app
     timeout: 5000
 - assertNotVisible: "Start now"
 - takeScreenshot: manual_started
+# The edit screen has no bottom bar; back returns to the tabs.
+- back
 - tapOn: "My recipes"
 - assertVisible: "End now"
 - tapOn: "End now"
