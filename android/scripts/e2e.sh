@@ -74,6 +74,15 @@ grep -q "BlockService" "$OUT/services_after_autooff.txt" && fail "BlockService s
 [ "$(zen)" = "0" ] || fail "DND still on after auto-off (zen_mode=$(zen))"
 flow 80_after_autooff
 
+# A mode ending must hand back the user's own DND, not switch it off.
+adb shell cmd notification set_dnd priority
+sleep 2
+[ "$(zen)" != "0" ] || fail "could not turn on user DND (zen_mode=$(zen))"
+flow 20_tap_toggle
+sleep 3
+[ "$(zen)" != "0" ] || fail "user's own DND was turned off when the mode ended (zen_mode=$(zen))"
+adb shell cmd notification set_dnd off
+
 adb logcat -d > "$OUT/logcat.txt"
 mv ./*.png "$OUT/" 2>/dev/null || true
 exit $status
