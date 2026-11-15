@@ -13,9 +13,20 @@ android {
         applicationId = "com.habittags.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toInt() ?: 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // A fixed debug key so each CI build installs over the previous one and keeps the user's tags.
+    // Debug-only and deliberately public; release builds will use a private key.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
