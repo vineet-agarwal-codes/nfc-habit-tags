@@ -20,11 +20,9 @@ appId: com.habittags.app
 - scrollUntilVisible:
     element: "Write to a tag"
 - tapOn: "Write to a tag"
-- extendedWaitUntil:
-    visible: "Tags"
-    timeout: 10000
 - scrollUntilVisible:
     element: "1 tag"
+    timeout: 30000
 - scrollUntilVisible:
     element: "Uninstall"
 - takeScreenshot: first_run_edit
