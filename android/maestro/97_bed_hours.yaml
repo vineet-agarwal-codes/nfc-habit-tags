@@ -24,11 +24,9 @@ appId: com.habittags.app
 - openLink: "habittags-debug://param/app:bed-sleep/sleepEnd/1"
 - launchApp:
     stopApp: false
-- tapOn: "My recipes"
-- scrollUntilVisible:
-    element: "Turns on between 00:00 and 00:01"
-- tapOn: "Bed: Sleep Mode"
+# Skip for now leaves us on Bed's edit screen.
 - assertVisible: "Turns on between 00:00 and 00:01"
+- assertVisible: "until: 00:01"
 - tapOn: "Start now"
 - assertVisible: "Outside its usual hours"
 - takeScreenshot: bed_outside_hours
@@ -37,4 +35,8 @@ appId: com.habittags.app
     visible: "On now"
     timeout: 5000
 - takeScreenshot: bed_started_anyway
+- back
+- tapOn: "My recipes"
+- scrollUntilVisible:
+    element: "Turns on between 00:00 and 00:01"
 - openLink: "habittags-debug://expire-soon/app:bed-sleep"
