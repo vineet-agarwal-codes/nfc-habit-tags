@@ -19,6 +19,7 @@ Project `bfwyytbghnfwnikpcugx` (Mumbai). Scripts use the Supabase Management API
 
 Editing `doc` updates everyone's installed copy on their next catalog fetch; users keep their own settings.
 Unpublishing hides it from Discover; phones that installed it keep it as "No longer offered".
+Phones with the app open don't hear about an unpublish (Realtime only sends rows the app may read, and an unpublished row no longer is); it takes effect the next time each phone opens the app. Publishing and edits arrive within seconds.
 
 ## Stats
 
