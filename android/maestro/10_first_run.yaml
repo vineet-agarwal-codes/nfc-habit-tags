@@ -21,9 +21,12 @@ appId: com.habittags.app
     element: "Write to a tag"
 - tapOn: "Write to a tag"
 - extendedWaitUntil:
-    visible: "1 tag"
+    visible: "Tags"
     timeout: 10000
-- assertVisible: "Uninstall"
+- scrollUntilVisible:
+    element: "1 tag"
+- scrollUntilVisible:
+    element: "Uninstall"
 - takeScreenshot: first_run_edit
 - back
 - tapOn: "My recipes"

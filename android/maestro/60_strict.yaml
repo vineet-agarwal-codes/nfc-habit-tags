@@ -17,6 +17,6 @@ appId: com.habittags.app
 - tapOn: "My recipes"
 - tapOn: "Desk: Deep Work"
 - scrollUntilVisible:
-    element: "Turn this mode off first"
-- assertVisible: "Uninstall"
+    element: "Uninstall"
+- assertVisible: "Turn this mode off first"
 - back
