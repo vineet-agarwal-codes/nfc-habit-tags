@@ -7,6 +7,7 @@ import com.habittags.core.fixtures.Fixtures.ms
 import com.habittags.core.fixtures.Fixtures.recipes
 import com.habittags.core.fixtures.Fixtures.tag
 import com.habittags.core.fixtures.Fixtures.zone
+import com.habittags.core.mode.InstalledTag
 import com.habittags.core.mode.ModeEngine
 import com.habittags.core.mode.TapResult
 import com.habittags.core.usage.UsageEvent
@@ -78,5 +79,28 @@ class StateCodecTest {
     fun withDeviceIdSetsOnlyOnce() {
         assertEquals("new", AppState().withDeviceId { "new" }.deviceId)
         assertEquals("old", AppState(deviceId = "old").withDeviceId { "new" }.deviceId)
+    }
+
+    @Test
+    fun manualTagAndParams() {
+        val t1 = InstalledTag("t1", "desk", "Desk 1", mapOf("autoOffMinutes" to 60))
+        val t2 = InstalledTag("t2", "desk", "Desk 2", mapOf("autoOffMinutes" to 120))
+        val state = AppState(tags = linkedMapOf("t1" to t1, "t2" to t2), recipeParams = mapOf("bed" to mapOf("autoOffMinutes" to 300)))
+        // cases: recipe -> expected manual tag
+        assertEquals(t1, state.manualTag("desk", "Desk"))
+        assertEquals(InstalledTag("app:bed", "bed", "Bed", mapOf("autoOffMinutes" to 300)), state.manualTag("bed", "Bed"))
+        assertEquals(InstalledTag("app:gym", "gym", "Gym", emptyMap()), state.manualTag("gym", "Gym"))
+        assertEquals(mapOf("autoOffMinutes" to 60), state.paramsFor("t1", "desk"))
+        assertEquals(mapOf("autoOffMinutes" to 300), state.paramsFor("app:bed", "bed"))
+        // Tag order survives a save and reload.
+        assertEquals(t1, StateCodec.decode(StateCodec.encode(state)).manualTag("desk", "Desk"))
+    }
+
+    @Test
+    fun stateWithoutRecipeParamsOrSourceDecodes() {
+        val text = """{"stateVersion":2,"tapLog":[{"atMs":1,"tagId":"t1","label":"Desk","recipeId":"desk"}]}"""
+        val state = StateCodec.decode(text)
+        assertEquals(emptyMap(), state.recipeParams)
+        assertEquals("tag", state.tapLog.single().source)
     }
 }

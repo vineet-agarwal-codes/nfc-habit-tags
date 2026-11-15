@@ -123,4 +123,46 @@ class ModeEngineTest {
         val restarted = assertIs<TapResult.Started>(tap(state, deskTag, desk, "11:31"))
         assertEquals(ms("11:31") + 90 * MIN, restarted.state.getValue("t1").autoOffAt)
     }
+
+    @Test
+    fun manualStartOfTaglessRecipeUsesAppKey() {
+        val manual = InstalledTag("app:desk", "desk", "Desk", mapOf("autoOffMinutes" to 30))
+        val started = assertIs<TapResult.Started>(ModeEngine.startManually(emptyMap(), manual, desk, at("10:00"), zone, groups))
+        val mode = started.state.getValue("app:desk")
+        assertEquals(ms("10:00") + 30 * MIN, mode.autoOffAt)
+        assertEquals(setOf("insta", "fb", "yt"), mode.blockedPackages)
+    }
+
+    @Test
+    fun manualStartWhileOnIsRefused() {
+        val state = start().state
+        val manual = InstalledTag("app:desk", "desk", "Desk", emptyMap())
+        assertEquals(TapResult.AlreadyOn, ModeEngine.startManually(state, manual, desk, at("10:05"), zone, groups))
+        assertEquals(TapResult.AlreadyOn, ModeEngine.startManually(state, deskTag, desk, at("10:05"), zone, groups))
+        // After auto-off the recipe is no longer on, so it can start again.
+        assertIs<TapResult.Started>(ModeEngine.startManually(state, deskTag, desk, at("11:31"), zone, groups))
+    }
+
+    @Test
+    fun manualOneShotRuns() {
+        assertIs<TapResult.Ran>(ModeEngine.startManually(emptyMap(), tag("g1", gym), gym, at("10:00"), zone, groups))
+    }
+
+    @Test
+    fun tapActsOnRecipesRunningMode() {
+        val strict = InstalledTag("app:desk", "desk", "Desk", mapOf("strictMinutes" to 45))
+        val appOn = assertIs<TapResult.Started>(ModeEngine.startManually(emptyMap(), strict, desk, at("10:00"), zone, groups)).state
+        // cases: (active, tapped tag, time) -> expected key and result
+        assertEquals("app:desk", ModeEngine.modeKey(appOn, deskTag, ms("10:10")))
+        assertEquals(TapResult.StrictRefused(35 * MIN), tap(appOn, deskTag, desk, "10:10"))
+        assertEquals(emptyMap(), assertIs<TapResult.Ended>(tap(appOn, deskTag, desk, "10:46")).state)
+
+        val t1On = start().state
+        val t2 = tag("t2", desk)
+        assertEquals("t1", ModeEngine.modeKey(t1On, t2, ms("10:05")))
+        assertEquals(emptyMap(), assertIs<TapResult.Ended>(tap(t1On, t2, desk, "10:05")).state)
+        // An expired mode doesn't capture taps: t2 starts its own.
+        assertEquals("t2", ModeEngine.modeKey(t1On, t2, ms("11:31")))
+        assertIs<TapResult.Started>(tap(t1On, t2, desk, "11:31"))
+    }
 }

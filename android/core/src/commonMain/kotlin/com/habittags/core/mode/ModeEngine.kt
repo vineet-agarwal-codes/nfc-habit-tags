@@ -31,6 +31,7 @@ data class ActiveMode(
 sealed interface TapResult {
     data object UnknownTag : TapResult
     data object RecipeUnavailable : TapResult
+    data object AlreadyOn : TapResult
     data class Started(val state: Map<String, ActiveMode>, val effects: List<Action>) : TapResult
     data class Ended(val state: Map<String, ActiveMode>, val effects: List<Action>) : TapResult
     data class StrictRefused(val remainingMs: Long) : TapResult
@@ -38,6 +39,8 @@ sealed interface TapResult {
 }
 
 private const val MINUTE_MS = 60_000L
+
+private fun ActiveMode.isLive(nowMs: Long) = autoOffAt == null || nowMs < autoOffAt
 
 object ModeEngine {
     fun onTap(
@@ -51,11 +54,12 @@ object ModeEngine {
         if (tag == null) return TapResult.UnknownTag
         if (recipe == null) return TapResult.RecipeUnavailable
         val nowMs = now.toEpochMilliseconds()
-        val current = active[tag.tagId]?.takeUnless { it.autoOffAt != null && nowMs >= it.autoOffAt }
+        val key = modeKey(active, tag, nowMs)
+        val current = active[key]?.takeIf { it.isLive(nowMs) }
         if (recipe.mode == Mode.toggle && current != null) {
             val strictUntil = current.strictUntil
             if (strictUntil != null && nowMs < strictUntil) return TapResult.StrictRefused(strictUntil - nowMs)
-            return TapResult.Ended(active - tag.tagId, recipe.endActions)
+            return TapResult.Ended(active - key, recipe.endActions)
         }
         val actions = selectRule(recipe.rules, now.toLocalDateTime(timeZone).time)?.actions ?: return TapResult.Ran(emptyList())
         val effects = actions.filter { it !is BlockGroups && it !is Dnd }
@@ -76,6 +80,26 @@ object ModeEngine {
             blockedPackages = blockedGroups.flatMap { groups[it].orEmpty() }.toSet(),
         )
         return TapResult.Started(active + (tag.tagId to mode), effects)
+    }
+
+    /** A recipe runs at most once: a tap acts on the recipe's running mode, whichever tag (or the app) started it. */
+    fun modeKey(active: Map<String, ActiveMode>, tag: InstalledTag, nowMs: Long): String =
+        tag.tagId.takeIf { active[it]?.isLive(nowMs) == true }
+            ?: active.values.firstOrNull { it.recipeId == tag.recipeId && it.isLive(nowMs) }?.tagId
+            ?: tag.tagId
+
+    /** Starting from the app is a tap that may only start, never end, a mode. */
+    fun startManually(
+        active: Map<String, ActiveMode>,
+        tag: InstalledTag,
+        recipe: Recipe?,
+        now: Instant,
+        timeZone: TimeZone = TimeZone.currentSystemDefault(),
+        groups: Map<String, Set<String>> = emptyMap(),
+    ): TapResult {
+        val nowMs = now.toEpochMilliseconds()
+        if (active.values.any { it.recipeId == tag.recipeId && it.isLive(nowMs) }) return TapResult.AlreadyOn
+        return onTap(active, tag, recipe, now, timeZone, groups)
     }
 
     fun expire(active: Map<String, ActiveMode>, nowMs: Long, recipes: (String) -> Recipe?): Pair<Map<String, ActiveMode>, List<Action>> {

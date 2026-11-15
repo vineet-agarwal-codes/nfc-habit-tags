@@ -17,6 +17,8 @@ data class TapLogEntry(
     val recipeId: String? = null,
     /** IANA zone at tap time, so the tap's local day never moves if the phone changes zone. */
     val zone: String? = null,
+    /** "tag" or "app" (started from the app). Kept on the phone only. */
+    val source: String = "tag",
 )
 
 @Serializable
@@ -30,9 +32,20 @@ data class AppState(
     val deviceId: String? = null,
     val lastReportMs: Long = 0,
     val pendingEvents: List<UsageEvent> = emptyList(),
+    /** Settings per installed recipe, used when it's started from the app without a tag. */
+    val recipeParams: Map<String, Map<String, Int>> = emptyMap(),
 )
 
 const val STATE_VERSION = 2
+
+/** What a manual start taps: the recipe's first tag, or a virtual "app:<recipeId>" tag when it has none. */
+fun AppState.manualTag(recipeId: String, title: String): InstalledTag =
+    tags.values.firstOrNull { it.recipeId == recipeId }
+        ?: InstalledTag("$APP_KEY_PREFIX$recipeId", recipeId, title, recipeParams[recipeId].orEmpty())
+
+fun AppState.paramsFor(key: String, recipeId: String): Map<String, Int> = tags[key]?.params ?: recipeParams[recipeId].orEmpty()
+
+const val APP_KEY_PREFIX = "app:"
 
 fun AppState.withDeviceId(newId: () -> String): AppState = if (deviceId != null) this else copy(deviceId = newId())
 
