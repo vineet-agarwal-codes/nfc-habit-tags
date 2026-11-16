@@ -19,7 +19,17 @@ class ZoneEventsTest {
 
     private fun String.format0(i: Int) = replaceFirst("%02x", (i / 256).toString(16).padStart(2, '0')).replaceFirst("%02x", (i % 256).toString(16).padStart(2, '0'))
 
-    private fun UsageEvent.size() = payload.toString().length
+    /** Size as Postgres prints jsonb: a space after every ':' and ',' outside strings (BSSIDs contain ':'). */
+    private fun UsageEvent.size(): Int {
+        val text = payload.toString()
+        var inString = false
+        var extra = 0
+        for (c in text) {
+            if (c == '"') inString = !inString
+            if (!inString && (c == ':' || c == ',')) extra++
+        }
+        return text.length + extra
+    }
 
     @Test
     fun recordingProducesMetaPlusSamplesWithLocalDayZoneAndUtcInstant() {

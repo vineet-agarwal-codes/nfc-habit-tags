@@ -11,8 +11,8 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 
-/** The report_events RPC drops any payload over 4096 bytes; stay well inside it. */
-const val MAX_PAYLOAD_BYTES = 3500
+/** The report_events RPC drops payloads over 4096 bytes as Postgres prints them (jsonb adds a space after every colon and comma), so the compact size must stay well under it. */
+const val MAX_PAYLOAD_BYTES = 3000
 
 private val json = Json { encodeDefaults = true }
 

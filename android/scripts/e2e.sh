@@ -124,21 +124,20 @@ adb shell dumpsys activity services $PKG > "$OUT/services_after_manual.txt"
 grep -q "BlockService" "$OUT/services_after_manual.txt" && fail "BlockService still running after manual mode auto-off"
 flow 97_bed_hours
 
-# zone lab paused 2026-11-15: re-enable when lab work resumes (flow and upload check never verified on CI).
-# # Zone lab (debug-only) with the fake Wi-Fi scanner; its uploads go to the fixture backend.
-# flow 99_zone_lab
-# sleep 3
-# reports
-# node -e '
-#   const lines = require("fs").readFileSync(process.argv[1], "utf8").trim().split("\n").filter(Boolean);
-#   const events = lines.flatMap((l) => JSON.parse(l).events);
-#   const ok = (e) => e.day && e.tz && e.at;
-#   const recs = events.filter((e) => e.type === "zone_recording" && ok(e));
-#   const samples = events.filter((e) => e.type === "zone_sample" && ok(e) && e.payload.wifi.length > 0);
-#   const fb = events.find((e) => e.type === "zone_guess_feedback" && ok(e) && e.payload.actual === "Desk" && e.payload.correct === true);
-#   process.exit(recs.length >= 2 && samples.length >= 9 && fb ? 0 : 1);
-# ' "$OUT/debug_reports.jsonl" || fail "zone lab events missing from uploads"
-# debug_link zone-fake/off
+# Zone lab (debug-only) with the fake Wi-Fi scanner; its uploads go to the fixture backend.
+flow 99_zone_lab
+sleep 3
+reports
+node -e '
+  const lines = require("fs").readFileSync(process.argv[1], "utf8").trim().split("\n").filter(Boolean);
+  const events = lines.flatMap((l) => JSON.parse(l).events);
+  const ok = (e) => e.day && e.tz && e.at;
+  const recs = events.filter((e) => e.type === "zone_recording" && ok(e));
+  const samples = events.filter((e) => e.type === "zone_sample" && ok(e) && e.payload.wifi.length > 0);
+  const fb = events.find((e) => e.type === "zone_guess_feedback" && ok(e) && e.payload.actual === "Desk" && e.payload.correct === true);
+  process.exit(recs.length >= 2 && samples.length >= 9 && fb ? 0 : 1);
+' "$OUT/debug_reports.jsonl" || fail "zone lab events missing from uploads"
+debug_link zone-fake/off
 
 adb logcat -d > "$OUT/logcat.txt"
 # Screenshot locations differ between Maestro versions; collect them wherever they landed.
