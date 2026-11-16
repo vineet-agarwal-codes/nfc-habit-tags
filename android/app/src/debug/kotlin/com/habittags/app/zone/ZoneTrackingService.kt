@@ -39,12 +39,20 @@ class ZoneTrackingService : LifecycleService(), SensorEventListener {
             stopSelf()
             return START_NOT_STICKY
         }
-        ServiceCompat.startForeground(
-            this, NOTIFICATION_ID, ongoing(),
-            if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0,
-        )
+        try {
+            ServiceCompat.startForeground(
+                this, NOTIFICATION_ID, ongoing(),
+                if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0,
+            )
+        } catch (e: SecurityException) {
+            // A location service may only start while the app is on screen; the switch shows it as off.
+            Log.w(TAG, "can't start lab tracking from the background", e)
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if (loop == null) start()
-        return START_STICKY
+        // Not sticky: Android won't let a location service restart itself from the background.
+        return START_NOT_STICKY
     }
 
     private fun start() {
