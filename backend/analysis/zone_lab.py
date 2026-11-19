@@ -18,23 +18,27 @@ import statistics
 import urllib.request
 from collections import defaultdict
 
-MISSING_DBM = -100
-K = 5
 MAG_WEIGHT = 1.0
 ORIENT_WEIGHT = 0.1
-KNOWN_DB = 10.0
-UNKNOWN_DB = 25.0
+OVERLAP_PENALTY_DB = 20.0
+TEMPERATURE_DB = 3.0
+KNOWN_DB = 14.0
+UNKNOWN_DB = 22.0
 UNKNOWN_SPOT = "Unknown place"
 FEATURE_SETS = {"wifi": (False, False), "wifi+mag": (True, False), "wifi+mag+orient": (True, True)}
 
 
 def wifi_distance(a, b):
+    """Mirrors ZoneClassifier.wifiDistance: mean |dBm| over shared APs + penalty for APs not in common."""
     ra = {x["b"]: x["r"] for x in a}
     rb = {x["b"]: x["r"] for x in b}
-    keys = set(ra) | set(rb)
-    if not keys:
+    union = set(ra) | set(rb)
+    if not union:
         return 0.0
-    return math.sqrt(sum((ra.get(k, MISSING_DBM) - rb.get(k, MISSING_DBM)) ** 2 for k in keys) / len(keys))
+    shared = set(ra) & set(rb)
+    if not shared:
+        return OVERLAP_PENALTY_DB + UNKNOWN_DB
+    return sum(abs(ra[k] - rb[k]) for k in shared) / len(shared) + OVERLAP_PENALTY_DB * (1 - len(shared) / len(union))
 
 
 def angle_degrees(a, b):
@@ -58,17 +62,19 @@ def distance(a, b, magnet, orientation):
     return math.sqrt(total)
 
 
-def guess(train, sample, magnet, orientation, k=K):
+def guess(train, sample, magnet, orientation):
     """train: list of (spot, sample). Returns (spot, confidence) or None; mirrors ZoneClassifier.guess,
     including UNKNOWN_SPOT when the nearest recording is far away."""
-    neighbours = sorted(((distance(sample, s, magnet, orientation), spot) for spot, s in train), key=lambda x: x[0])[:k]
-    if not neighbours:
+    nearest_by_spot = {}
+    for spot, s in train:
+        d = distance(sample, s, magnet, orientation)
+        nearest_by_spot[spot] = min(d, nearest_by_spot.get(spot, d))
+    if not nearest_by_spot:
         return None
-    weights = defaultdict(float)
-    for d, spot in neighbours:
-        weights[spot] += 1.0 / (1.0 + d)
+    nearest = min(nearest_by_spot.values())
+    weights = {spot: math.exp(-(d - nearest) / TEMPERATURE_DB) for spot, d in nearest_by_spot.items()}
     total = sum(weights.values())
-    match = min(1.0, max(0.0, (UNKNOWN_DB - neighbours[0][0]) / (UNKNOWN_DB - KNOWN_DB)))
+    match = min(1.0, max(0.0, (UNKNOWN_DB - nearest) / (UNKNOWN_DB - KNOWN_DB)))
     scores = {spot: w / total * match for spot, w in weights.items()}
     scores[UNKNOWN_SPOT] = 1.0 - match
     spot = max(scores, key=scores.get)
