@@ -239,8 +239,11 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
         )
 
         HorizontalDivider()
-        Text(if (pending == 0) "All lab data uploaded." else "$pending lab events waiting to upload.", style = MaterialTheme.typography.bodySmall)
-        if (pending > 0) TextButton(onClick = { scope.launch { ZoneLabStore.upload(context) } }) { Text("Upload now") }
+        val uploadFailed by ZoneLabStore.uploadFailed.collectAsState()
+        if (uploadFailed && pending > 0) {
+            Text("Couldn't upload $pending lab events (no internet?). They're kept and retried automatically.", style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = { scope.launch { ZoneLabStore.upload(context) } }) { Text("Retry now") }
+        }
     }
 
     askFor.value?.let { (id, guessed) ->

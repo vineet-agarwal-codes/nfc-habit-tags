@@ -72,6 +72,7 @@ object ZoneLab {
         val guess = if (usable) ZoneClassifier.guess(ZoneLabStore.recordings.value, sample) else null
         val id = UUID.randomUUID().toString()
         ZoneLabStore.enqueue(context, listOf(ZoneEvents.observed(id, source, sample, guess, Clock.System.now(), TimeZone.currentSystemDefault())))
+        if (source == "live") ZoneLabStore.upload(context)
         return Observation(id, sample, guess)
     }
 

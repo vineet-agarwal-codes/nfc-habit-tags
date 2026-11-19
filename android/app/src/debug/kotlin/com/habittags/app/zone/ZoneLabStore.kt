@@ -33,6 +33,9 @@ object ZoneLabStore {
     val recordings: StateFlow<List<ZoneRecording>> = _recordings.asStateFlow()
     private val _pending = MutableStateFlow(0)
     val pending: StateFlow<Int> = _pending.asStateFlow()
+    private val _uploadFailed = MutableStateFlow(false)
+    /** True after an upload attempt failed and until one succeeds; the screen only shows the queue then. */
+    val uploadFailed: StateFlow<Boolean> = _uploadFailed.asStateFlow()
 
     private fun recordingsFile(c: Context) = File(c.filesDir, "zone_recordings.json")
     private fun outboxFile(c: Context) = File(c.filesDir, "zone_outbox.json")
@@ -79,6 +82,7 @@ object ZoneLabStore {
                 app.backend.report(deviceId, chunk)
             } catch (e: Exception) {
                 Log.w(TAG, "zone upload failed; ${_pending.value} events stay queued", e)
+                _uploadFailed.value = true
                 return@withLock false
             }
             synchronized(lock) {
@@ -89,6 +93,7 @@ object ZoneLabStore {
                 _pending.value = remaining.size
             }
         }
+        _uploadFailed.value = false
         true
     }
 
