@@ -107,10 +107,11 @@ class ZoneTrackingService : LifecycleService(), SensorEventListener {
         val notification = NotificationCompat.Builder(this, ASK_CHANNEL)
             .setSmallIcon(R.drawable.ic_tag)
             .setContentTitle(if (spot == UNKNOWN_SPOT) "Are you somewhere you haven't recorded?" else "Are you at $spot?")
-            .setContentText("Zone lab is checking its guess.")
+            .setContentText("Tap to tell the lab where you are.")
+            .setContentIntent(no)
             .setAutoCancel(true)
             .addAction(0, "Yes", yes)
-            .addAction(0, "No", no)
+            .addAction(0, "Somewhere else", no)
             .build()
         getSystemService(NotificationManager::class.java).notify(ASK_NOTIFICATION_ID, notification)
     }
