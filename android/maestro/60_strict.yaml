@@ -1,4 +1,4 @@
-appId: com.habittags.app
+appId: app.mise
 ---
 - openLink: "habittags-debug://param/last/strictMinutes/45"
 - launchApp:

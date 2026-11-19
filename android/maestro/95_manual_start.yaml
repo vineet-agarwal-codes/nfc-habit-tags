@@ -1,4 +1,4 @@
-appId: com.habittags.app
+appId: app.mise
 ---
 # Install Desk without a tag, start it from the app, check the gate, then let auto-off end it.
 - launchApp:

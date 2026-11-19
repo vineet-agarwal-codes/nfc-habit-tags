@@ -86,7 +86,7 @@ Home                                   Discover
 ## Play Store readiness
 
 - **Release signing:** an upload key generated on the VM, kept outside the repo (`~/.config/habit-tags/`), backed up by Vineet; Play App Signing enabled. CI builds signed release AABs only when the key is supplied as GitHub secrets; otherwise unsigned.
-- **applicationId** stays `com.habittags.app` (cannot change after first upload; invisible to users). App label "Mise".
+- **applicationId** is `app.mise` (Vineet, 2026-11-19; cannot change after the first upload). The Kotlin namespace stays `com.habittags.app`; tags keep the `com.habittags.app:tag` record type and gain an `app.mise` application record. App label "Mise".
 - **Permissions and declarations:** usage access and overlay (explained in-app before the system screen), foreground service `specialUse` (Play declaration text + short screen recording), DND access, notifications, NFC. No accessibility service, no QUERY_ALL_PACKAGES. Zone lab code and its location permissions are debug-only and absent from the release build (verified on the built AAB's merged manifest).
 - **Privacy policy:** a page on the GitHub Pages site describing the anonymous device ID, usage events, block reach counts, Supabase as processor, retention and deletion contact. Linked in the app (Discover footer / settings) and the listing.
 - **Data safety form:** answers drafted from the actual events the app sends.

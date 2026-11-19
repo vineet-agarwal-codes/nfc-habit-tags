@@ -1,4 +1,4 @@
-appId: com.habittags.app
+appId: app.mise
 ---
 - launchApp
 - extendedWaitUntil:

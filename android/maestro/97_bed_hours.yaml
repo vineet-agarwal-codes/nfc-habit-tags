@@ -1,4 +1,4 @@
-appId: com.habittags.app
+appId: app.mise
 ---
 # Bed's sleep hours are shown and editable; Start now outside them offers "Start anyway".
 - launchApp:

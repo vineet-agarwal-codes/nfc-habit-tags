@@ -1,4 +1,4 @@
-appId: com.habittags.app
+appId: app.mise
 ---
 - openLink: "habittags-debug://gate-words/5"
 - launchApp:

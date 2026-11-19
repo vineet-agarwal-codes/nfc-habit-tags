@@ -5,6 +5,7 @@ import android.nfc.NdefRecord
 import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.nfc.tech.NdefFormatable
+import com.habittags.app.BuildConfig
 import com.habittags.core.tag.TagPayload
 
 sealed interface WriteResult {
@@ -20,7 +21,9 @@ object TagWriter {
 
     fun message(tagId: String) = NdefMessage(
         NdefRecord.createExternal(TagPayload.EXTERNAL_DOMAIN, TagPayload.EXTERNAL_TYPE, tagId.toByteArray(Charsets.US_ASCII)),
-        NdefRecord.createApplicationRecord(TagPayload.EXTERNAL_DOMAIN),
+        // The record type above stays com.habittags.app:tag so tags written by earlier builds keep working;
+        // the Android Application Record must name the installed package so a tap opens (or installs) Mise.
+        NdefRecord.createApplicationRecord(BuildConfig.APPLICATION_ID),
     )
 
     /** Our external record (Android-written) or the https link record (iPhone-written). */

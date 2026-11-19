@@ -6,7 +6,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 OUT=build/e2e
 mkdir -p "$OUT"
-PKG=com.habittags.app
+PKG=app.mise
 status=0
 fail() { echo "E2E FAILED: $*"; status=1; }
 
@@ -80,7 +80,7 @@ node -e '
 flow 30_block
 overlay_visible || fail "overlay not visible over YouTube"
 adb shell dumpsys alarm > "$OUT/alarms_30.txt"
-grep -q "com.habittags.app" "$OUT/alarms_30.txt" || fail "no auto-off alarm scheduled while a mode is active"
+grep -q "$PKG" "$OUT/alarms_30.txt" || fail "no auto-off alarm scheduled while a mode is active"
 [ "$(zen)" != "0" ] || fail "DND not on while desk mode active (zen_mode=$(zen))"
 
 adb reboot

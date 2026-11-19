@@ -10,7 +10,8 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.habittags.app"
+        // Final after the first Play upload; the Kotlin namespace stays com.habittags.app.
+        applicationId = "app.mise"
         minSdk = 26
         targetSdk = 35
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toInt() ?: 1

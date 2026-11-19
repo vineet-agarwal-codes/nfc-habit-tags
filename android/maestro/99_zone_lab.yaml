@@ -1,4 +1,4 @@
-appId: com.habittags.app
+appId: app.mise
 ---
 # Zone lab with the debug fake scanner: teach Bed and Desk, then "Where am I?" at Desk.
 - openLink: "habittags-debug://zone-fake/Bed"

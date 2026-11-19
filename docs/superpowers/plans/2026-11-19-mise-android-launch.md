@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- App label "Mise"; Play title "Mise: Shape your spaces"; applicationId stays `com.habittags.app`; `versionName = "1.0.0"`.
+- App label "Mise"; Play title "Mise: Shape your spaces"; applicationId is **`app.mise`** (Vineet, 2026-11-19; final after the first Play upload; Kotlin namespace stays `com.habittags.app`; new tags carry an `app.mise` application record, the external type stays `com.habittags.app:tag` so older tags keep working); `versionName = "1.0.0"`.
 - Vocabulary in all copy: **space** (a place running a recipe), **recipe**, "Add to <Space>", "Start now", "End early". Sentence case. No tiny uppercase labels.
 - Colour is 80-15-5. Base `#F5F5F2` light and `#151716` dark. Ink near-black and near-white. One surface tone step. Accent tomato `#E5482F`, adjusted only for AA contrast, used on the primary action, the mark and live indicators.
 - Six space colours, assigned automatically. Desk is tomato, bed is deep blue, workout is green, then three more. Each must pass AA for text on its own field in light and dark.
