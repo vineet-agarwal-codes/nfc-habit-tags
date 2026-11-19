@@ -44,6 +44,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -121,9 +123,11 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
     var observation by remember { mutableStateOf<ZoneLab.Observation?>(null) }
     var answered by remember { mutableStateOf(false) }
     var tracking by remember { mutableStateOf(ZoneTrackingService.running) }
+    val scroll = rememberScrollState()
+    val nameFocus = remember { FocusRequester() }
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        Modifier.fillMaxSize().verticalScroll(scroll).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text("Zone lab", style = MaterialTheme.typography.headlineSmall)
@@ -157,7 +161,10 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
                 FilterChip(selected = spot == s && custom.isBlank(), onClick = { spot = s; custom = "" }, label = { Text(s) })
             }
         }
-        OutlinedTextField(value = custom, onValueChange = { custom = it }, label = { Text("Or a new spot name") }, singleLine = true)
+        OutlinedTextField(
+            value = custom, onValueChange = { custom = it }, label = { Text("Or a new spot name") }, singleLine = true,
+            modifier = Modifier.focusRequester(nameFocus),
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(selected = mode == MODE_RESTING, onClick = { mode = MODE_RESTING }, label = { Text("Phone resting here") })
             FilterChip(selected = mode == MODE_POCKET, onClick = { mode = MODE_POCKET }, label = { Text("In my pocket here") })
@@ -217,16 +224,25 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
                 if (!obs.sample.scanFresh) Text("(Used a Wi-Fi scan from the last minute.)", style = MaterialTheme.typography.bodySmall)
                 if (!answered) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        g.scores.entries.sortedByDescending { it.value }.forEachIndexed { i, (spot, score) ->
-                            val label = "$spot ${(score * 100).roundToInt()}%"
+                        g.scores.entries.sortedByDescending { it.value }.forEachIndexed { i, (candidate, score) ->
+                            val unknown = candidate == UNKNOWN_SPOT
+                            val label = "${if (unknown) "Somewhere else" else candidate} ${(score * 100).roundToInt()}%"
                             val pick = {
                                 answered = true
-                                scope.launch { ZoneLab.answer(context, obs.id, g.spot, spot, "live") }
+                                scope.launch { ZoneLab.answer(context, obs.id, g.spot, candidate, "live") }
+                                if (unknown) {
+                                    // An unrecorded place: go straight to teaching it.
+                                    custom = ""
+                                    recordStatus = "Name this place, then tap Record."
+                                    scope.launch {
+                                        scroll.animateScrollTo(0)
+                                        nameFocus.requestFocus()
+                                    }
+                                }
                                 Unit
                             }
                             if (i == 0) Button(onClick = pick) { Text(label) } else OutlinedButton(onClick = pick) { Text(label) }
                         }
-                        TextButton(onClick = { askFor.value = obs.id to g.spot }) { Text("Somewhere else") }
                     }
                 } else {
                     Text("Thanks — saved.")
@@ -279,7 +295,9 @@ private fun SpotPicker(title: String, onPick: (String) -> Unit, onDismiss: () ->
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    (ZoneLabStore.spots() + UNKNOWN_SPOT).forEach { s -> OutlinedButton(onClick = { onPick(s) }) { Text(s) } }
+                    (ZoneLabStore.spots() + UNKNOWN_SPOT).forEach { s ->
+                        OutlinedButton(onClick = { onPick(s) }) { Text(if (s == UNKNOWN_SPOT) "Somewhere else" else s) }
+                    }
                 }
                 OutlinedTextField(value = custom, onValueChange = { custom = it }, label = { Text("Somewhere else") }, singleLine = true)
             }
