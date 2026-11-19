@@ -223,6 +223,11 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
             }
         }
         if (!busy) observation?.let { obs ->
+            // Unanswered results go stale once you move, so they disappear on their own.
+            LaunchedEffect(obs.id) {
+                delay(RESULT_VISIBLE_MS)
+                if (observation?.id == obs.id) observation = null
+            }
             val g = obs.guess
             if (g == null) {
                 Text("Couldn't get a fresh Wi-Fi scan, so no guess. Try again in a minute.")
@@ -313,3 +318,6 @@ private fun SpotPicker(title: String, onPick: (String) -> Unit, onDismiss: () ->
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }
+
+/** How long an unanswered "Where am I?" result stays on screen. */
+private const val RESULT_VISIBLE_MS = 20_000L
