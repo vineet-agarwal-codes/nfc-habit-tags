@@ -45,6 +45,7 @@ class RealWifiScanSource(private val context: Context) : WifiScanSource {
         )
         @Suppress("DEPRECATION")
         val accepted = wifi.startScan()
+        if (accepted) ScanBudget.noteAccepted(context)
         val fresh = try {
             accepted && (withTimeoutOrNull(SCAN_TIMEOUT_MS) { done.await() } ?: false)
         } finally {

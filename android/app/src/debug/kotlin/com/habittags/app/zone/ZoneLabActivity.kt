@@ -175,8 +175,23 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
         }
         val target = custom.trim().ifBlank { spot }
         val modeLabel = if (mode == MODE_RESTING) "resting" else "in pocket"
-        Button(enabled = ready && !busy, onClick = {
+        // Count down until all 4 scans are free, so the recording never stalls halfway.
+        var waitMs by remember { mutableStateOf(ScanBudget.waitFor(context)) }
+        LaunchedEffect(busy) {
+            while (true) {
+                waitMs = ScanBudget.waitFor(context)
+                delay(1_000)
+            }
+        }
+        if (!busy && waitMs > 0) {
+            Text(
+                "Android allows 4 Wi-Fi scans per 2 minutes. Recording needs all 4, so it's ready in ${(waitMs + 999) / 1000} s.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Button(enabled = ready && !busy && waitMs == 0L, onClick = {
             busy = true
+            ScanBudget.recording = true
             scope.launch {
                 val rec = ZoneLab.record(context, target, mode) { p ->
                     recordStatus = when (p) {
@@ -187,9 +202,10 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
                 }
                 recordStatus = if (rec != null) "Saved: $target ($modeLabel)" else "Couldn't get ${ZoneLab.SCANS_PER_RECORDING} fresh scans in 4 minutes. Try again."
                 if (rec != null) custom = ""
+                ScanBudget.recording = false
                 busy = false
             }
-        }) { Text("Record $target") }
+        }) { Text(if (!busy && waitMs > 0) "Record $target (${(waitMs + 999) / 1000} s)" else "Record $target") }
         recordStatus?.let { Text(it) }
         val counts = recordings.groupBy { it.spot }.mapValues { (_, recs) ->
             "resting ${recs.count { it.mode == MODE_RESTING }}, pocket ${recs.count { it.mode == MODE_POCKET }}"

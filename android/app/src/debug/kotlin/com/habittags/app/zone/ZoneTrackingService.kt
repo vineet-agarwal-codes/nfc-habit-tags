@@ -80,6 +80,7 @@ class ZoneTrackingService : LifecycleService(), SensorEventListener {
     }
 
     private suspend fun sampleAndMaybeAsk() {
+        if (ScanBudget.recording) return
         val obs = ZoneLab.observe(this, "tracking")
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val now = System.currentTimeMillis()
