@@ -31,6 +31,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -64,7 +65,8 @@ class ZoneLabActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         ZoneLabStore.load(this)
         readAsk(intent)
-        setContent { HabitTheme { ZoneLabScreen(askFor) } }
+        // Surface paints the theme's background; without it a dark-mode phone got light text on the light window.
+        setContent { HabitTheme { Surface(Modifier.fillMaxSize()) { ZoneLabScreen(askFor) } } }
     }
 
     override fun onNewIntent(intent: Intent) {
