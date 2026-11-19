@@ -1,6 +1,6 @@
 # Mise — Android Production UI and Play Store Launch — Design
 
-Date: 2026-11-19. Status: draft for Vineet's review. Builds on the approved specs of 2026-11-14 and 2026-11-15 (behaviour unchanged unless stated here).
+Date: 2026-11-19. Status: approved by Vineet 2026-11-19. Builds on the approved specs of 2026-11-14 and 2026-11-15 (behaviour unchanged unless stated here).
 
 ## Intent
 
@@ -116,6 +116,8 @@ Home                                   Discover
 - Exact type sizes, spacing, the six space colours' final values (contrast-checked in light and dark), icon drawing details, motion timings.
 - Compose component structure.
 
-## Open for Vineet
+## Account and contact (decided 2026-11-19)
 
-- Contact email for the Play listing and privacy policy (a dedicated one is better than personal).
+- The Play developer account is an **individual account in Vineet's mother's name** from the start (her ID verification and payments profile, paid into her bank).
+- **Public contact details** in the listing and privacy policy: Vineet's Gmail (vineet140502@gmail.com) and his mobile number.
+- Vineet manages the Play Console day to day as an **invited user** on her account.
