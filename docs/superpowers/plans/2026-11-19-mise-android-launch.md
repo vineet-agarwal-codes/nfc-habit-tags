@@ -271,7 +271,7 @@ store/ listing.md, data-safety.md, declarations.md, screenshots/, feature-graphi
 ## Notes (filled during execution)
 
 - Font chosen: **Bricolage Grotesque** (OFL), bundled as three static cuts made with fontTools (regular wght 400/opsz 14, medium 500/24, bold 700/72). Picked without the two-font emulator comparison, to save CI runs: its character carries the display sizes the identity leans on; Instrument Sans read as a generic grotesque.
-- Mark approved by Vineet: pending — `docs/brand/mise-mark.png`, store icon `store/icon-512.png`.
+- Mark approved by Vineet (2026-11-19) as is: `docs/brand/mise-mark.png`, store icon `store/icon-512.png`.
 - Space colour final values (field / text on field / light tint / dark tint): tomato #C93A22/white/#EFDBD5/#4B221A, deep_blue #23408E/white/#D8DCE4/#19233A, green #1D6E41/white/#D7E2D9/#173123, ochre #E2A93B/ink/#F2EAD8/#524321, teal #0E6E72/white/#D5E2E0/#133132, plum #8A2C50/white/#E6D9DB/#381D27. Accent #C93A22 on light, #FF7A5C as text on dark. All pairs ≥ 4.5:1 (PaletteContrastTest).
 - applicationId changed to `app.mise` (Vineet). New tags get an `app.mise` application record; the `com.habittags.app:tag` record type is kept.
 - Deviations:
