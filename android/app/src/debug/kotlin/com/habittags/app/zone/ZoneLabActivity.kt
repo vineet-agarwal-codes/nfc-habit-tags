@@ -207,18 +207,24 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
             if (g == null) {
                 Text("Couldn't get a fresh Wi-Fi scan, so no guess. Try again in a minute.")
             } else {
-                Text(
-                    g.scores.entries.sortedByDescending { it.value }.joinToString(" · ") { "${it.key} ${(it.value * 100).roundToInt()}%" },
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                if (!answered) {
+                    Text("Where are you actually? Tap it:", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    Text(g.scores.entries.sortedByDescending { it.value }.joinToString(" · ") { "${it.key} ${(it.value * 100).roundToInt()}%" })
+                }
                 if (!obs.sample.scanFresh) Text("(Used a Wi-Fi scan from the last minute.)", style = MaterialTheme.typography.bodySmall)
                 if (!answered) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Button(onClick = {
-                            answered = true
-                            scope.launch { ZoneLab.answer(context, obs.id, g.spot, g.spot, "live") }
-                        }) { Text("Right") }
-                        OutlinedButton(onClick = { askFor.value = obs.id to g.spot }) { Text("Wrong") }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        g.scores.entries.sortedByDescending { it.value }.forEachIndexed { i, (spot, score) ->
+                            val label = "$spot ${(score * 100).roundToInt()}%"
+                            val pick = {
+                                answered = true
+                                scope.launch { ZoneLab.answer(context, obs.id, g.spot, spot, "live") }
+                                Unit
+                            }
+                            if (i == 0) Button(onClick = pick) { Text(label) } else OutlinedButton(onClick = pick) { Text(label) }
+                        }
+                        TextButton(onClick = { askFor.value = obs.id to g.spot }) { Text("Somewhere else") }
                     }
                 } else {
                     Text("Thanks — saved.")

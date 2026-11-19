@@ -21,14 +21,14 @@ appId: com.habittags.app
     timeout: 60000
 - takeScreenshot: zone_lab_recorded
 - scrollUntilVisible:
-    element: "Right|Where am I\\?"
+    element: "Where am I\\?"
     direction: DOWN
 - tapOn: "Where am I\\?"
 - extendedWaitUntil:
     visible: "Desk \\d+%.*"
     timeout: 20000
 - takeScreenshot: zone_lab_guess
-- tapOn: "Right"
+- tapOn: "Desk \\d+%"
 - extendedWaitUntil:
     visible: "Thanks — saved."
     timeout: 5000
