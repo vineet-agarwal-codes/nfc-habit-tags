@@ -9,6 +9,8 @@ appId: app.mise
     centerElement: true
 - tapOn: "Sleep Mode"
 - assertVisible: "Turns on between 21:00 and 05:00"
+- scrollUntilVisible:
+    element: "Add to Bed"
 - tapOn: "Add to Bed"
 - assertVisible: "Sleep mode can start from: 21:00"
 - assertVisible: "until: 05:00"

@@ -8,6 +8,8 @@ appId: app.mise
     element: "Deep Work"
     centerElement: true
 - tapOn: "Deep Work"
+- scrollUntilVisible:
+    element: "Add to Desk"
 - tapOn: "Add to Desk"
 - scrollUntilVisible:
     element: "Next"
