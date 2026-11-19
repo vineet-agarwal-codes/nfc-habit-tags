@@ -235,4 +235,17 @@ class ModeEngineTest {
         assertEquals("t2", ModeEngine.modeKey(t1On, t2, ms("11:31")))
         assertIs<TapResult.Started>(tap(t1On, t2, desk, "11:31"))
     }
+
+    @Test
+    fun reachCountsEveryModeBlockingTheApp() {
+        val both = start(tag("b1", bed), active = start().state).state
+        val cases = listOf(
+            "insta" to mapOf("t1" to 1, "b1" to 1), // social: in both
+            "yt" to mapOf("t1" to 1, "b1" to 0),    // video: desk only
+            "maps" to mapOf("t1" to 0, "b1" to 0),
+        )
+        for ((pkg, expected) in cases) {
+            assertEquals(expected, ModeEngine.recordReach(both, pkg).mapValues { it.value.reaches }, pkg)
+        }
+    }
 }

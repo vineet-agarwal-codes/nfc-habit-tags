@@ -52,7 +52,14 @@ data class Recipe(
     val rules: List<Rule>,
     val endActions: List<Action> = emptyList(),
     val price: Int? = null,
+    /** The space this recipe usually belongs to ("Desk") and its preferred colour id. */
+    val space: SpaceHint? = null,
+    /** Discover grouping: desk, bed, leaving, workout; anything else falls under "More recipes". */
+    val place: String? = null,
 )
+
+@Serializable
+data class SpaceHint(val name: String, val colour: String? = null)
 
 @Serializable(with = ActionSerializer::class)
 sealed interface Action

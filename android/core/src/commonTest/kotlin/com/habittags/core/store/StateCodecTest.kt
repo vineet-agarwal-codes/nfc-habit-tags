@@ -35,7 +35,8 @@ class StateCodecTest {
         for (text in listOf(null, "", "garbage", "{\"tags\": 5}")) assertEquals(AppState(), StateCodec.decode(text), "$text")
         // decodeOrNull tells corrupt data apart from an empty state, so the caller can keep the file.
         for (text in listOf("", "garbage", "{\"tags\": 5}", "[1]")) assertNull(StateCodec.decodeOrNull(text), text)
-        assertEquals(AppState(), StateCodec.decodeOrNull("{}"))
+        // An unversioned file is a v1 user, so it migrates (onboarded) rather than reading as a fresh install.
+        assertEquals(AppState(onboarded = true), StateCodec.decodeOrNull("{}"))
     }
 
     @Test
@@ -59,8 +60,17 @@ class StateCodecTest {
         for ((json, expected) in cases) {
             val state = StateCodec.decode(json)
             assertEquals(expected, state.installedRecipes, json)
-            assertEquals(2, state.stateVersion)
+            assertEquals(3, state.stateVersion)
+            assertEquals(true, state.onboarded, "upgrading users skip onboarding")
         }
+    }
+
+    @Test
+    fun v3KeepsSpacesAndFreshStateIsNotOnboarded() {
+        val v3 = AppState(installedRecipes = setOf("bed"), spaces = mapOf("bed" to com.habittags.core.space.Space("bed", "Bed", "deep_blue")), onboarded = true)
+        assertEquals(v3, StateCodec.decode(StateCodec.encode(v3)))
+        assertEquals(false, StateCodec.decode(null).onboarded)
+        assertEquals(false, StateCodec.decode(StateCodec.encode(AppState())).onboarded)
     }
 
     @Test

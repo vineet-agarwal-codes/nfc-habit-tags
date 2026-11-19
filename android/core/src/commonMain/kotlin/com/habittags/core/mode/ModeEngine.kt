@@ -27,6 +27,8 @@ data class ActiveMode(
     val dnd: Boolean,
     /** Apps resolved when the mode started, so later group edits can't weaken a running mode. */
     val blockedPackages: Set<String> = emptySet(),
+    /** Times a blocked app was opened while this mode ran. */
+    val reaches: Int = 0,
 )
 
 sealed interface TapResult {
@@ -141,6 +143,10 @@ object ModeEngine {
     }
 
     fun endViaGate(active: Map<String, ActiveMode>, tagId: String): Map<String, ActiveMode> = active - tagId
+
+    /** The foreground app switched to [pkg]: every running mode that blocks it counts one reach. */
+    fun recordReach(active: Map<String, ActiveMode>, pkg: String): Map<String, ActiveMode> =
+        active.mapValues { (_, m) -> if (pkg in m.blockedPackages) m.copy(reaches = m.reaches + 1) else m }
 
     fun blockedPackages(active: Map<String, ActiveMode>): Set<String> = active.values.flatMap { it.blockedPackages }.toSet()
 

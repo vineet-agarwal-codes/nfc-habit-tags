@@ -29,6 +29,33 @@ fun discoverOrder(snapshot: CatalogSnapshot, installed: Set<String>, now: Instan
     return boosted + rest
 }
 
+/** Discover's place groups, in display order; recipes with no known place go under "More recipes". */
+val PLACE_SECTIONS = listOf(
+    "desk" to "For your desk",
+    "bed" to "For bedtime",
+    "leaving" to "For leaving home",
+    "workout" to "For workouts",
+)
+const val NEW_SECTION = "New recipes"
+const val MORE_SECTION = "More recipes"
+
+/**
+ * [discoverOrder] split into titled sections: boosted new recipes first, then each place, then the
+ * rest; each keeps the popularity order and empty sections are dropped.
+ */
+fun discoverSections(snapshot: CatalogSnapshot, installed: Set<String>, now: Instant): List<Pair<String, List<Recipe>>> {
+    val ordered = discoverOrder(snapshot, installed, now)
+    fun meta(r: Recipe) = snapshot.meta[r.id] ?: RecipeMeta()
+    val boosted = ordered.take(NEW_RECIPE_BOOST_SLOTS)
+        .filter { r -> meta(r).publishedAt?.let { now - it <= NEW_RECIPE_WINDOW && it <= now } == true }
+    val rest = ordered - boosted.toSet()
+    val known = PLACE_SECTIONS.map { it.first }.toSet()
+    val sections = listOf(NEW_SECTION to boosted) +
+        PLACE_SECTIONS.map { (place, title) -> title to rest.filter { it.place == place } } +
+        listOf(MORE_SECTION to rest.filter { it.place !in known })
+    return sections.filter { it.second.isNotEmpty() }
+}
+
 /** Card lines; numbers under 5 are hidden, and "New" replaces both when neither is shown. */
 fun statLabel(stats: RecipeStats?): List<String> {
     if (stats == null) return emptyList()

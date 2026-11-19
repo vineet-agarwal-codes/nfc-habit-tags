@@ -2,6 +2,7 @@ package com.habittags.core.store
 
 import com.habittags.core.mode.ActiveMode
 import com.habittags.core.mode.InstalledTag
+import com.habittags.core.space.Space
 import com.habittags.core.usage.UsageEvent
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -27,6 +28,8 @@ data class AppState(
     val active: Map<String, ActiveMode> = emptyMap(),
     val groupOverrides: Map<String, Set<String>> = emptyMap(),
     val tapLog: List<TapLogEntry> = emptyList(),
+    /** One entry each time a running mode stopped a blocked app from opening (no app names). */
+    val reachLog: List<TapLogEntry> = emptyList(),
     val stateVersion: Int = STATE_VERSION,
     val installedRecipes: Set<String> = emptySet(),
     val deviceId: String? = null,
@@ -34,9 +37,13 @@ data class AppState(
     val pendingEvents: List<UsageEvent> = emptyList(),
     /** Settings per installed recipe, used when it's started from the app without a tag. */
     val recipeParams: Map<String, Map<String, Int>> = emptyMap(),
+    /** One space per installed recipe, keyed by recipe id (name and colour). */
+    val spaces: Map<String, Space> = emptyMap(),
+    /** False until the first-run screens have been seen; existing users are migrated to true. */
+    val onboarded: Boolean = false,
 )
 
-const val STATE_VERSION = 2
+const val STATE_VERSION = 3
 
 /** What a manual start taps: the recipe's first tag, or a virtual "app:<recipeId>" tag when it has none. */
 fun AppState.manualTag(recipeId: String, title: String): InstalledTag =
@@ -68,7 +75,13 @@ object StateCodec {
         return migrate(state)
     }
 
-    private fun migrate(state: AppState): AppState =
-        if (state.stateVersion >= STATE_VERSION) state
-        else state.copy(installedRecipes = state.tags.values.map { it.recipeId }.toSet(), stateVersion = STATE_VERSION)
+    private fun migrate(state: AppState): AppState {
+        var s = state
+        // v1 → v2: installed recipes didn't exist; every recipe with a tag counts as installed.
+        if (s.stateVersion < 2) s = s.copy(installedRecipes = s.tags.values.map { it.recipeId }.toSet())
+        // v2 → v3: people upgrading have used the app already, so they skip the first-run screens.
+        // Spaces are filled in by Spaces.ensure once the catalog is known.
+        if (s.stateVersion < 3) s = s.copy(onboarded = true)
+        return s.copy(stateVersion = STATE_VERSION)
+    }
 }

@@ -62,6 +62,20 @@ class UsageEventsTest {
     }
 
     @Test
+    fun reachesAreCountedSeparatelyFromTaps() {
+        val state = AppState(
+            tapLog = listOf(tap("2026-11-15T05:00:00Z")),
+            reachLog = listOf(tap("2026-11-15T05:10:00Z"), tap("2026-11-15T05:20:00Z"), tap("2026-11-15T05:30:00Z", recipe = "bed")),
+        )
+        val report = buildReport(state, t("2026-11-15T06:00:00Z"), kolkata)
+        assertEquals(mapOf(Triple<String, String?, String?>("desk", "2026-11-15", "Asia/Kolkata") to 1), counts(report))
+        val reaches = report.filter { it.type == "block_reach" }
+            .associate { it.payload["recipe"]!!.jsonPrimitive.content to it.payload["count"]!!.jsonPrimitive.int }
+        assertEquals(mapOf("desk" to 2, "bed" to 1), reaches)
+        assertTrue(report.filter { it.type == "block_reach" }.all { it.payload.keys == setOf("recipe", "count") })
+    }
+
+    @Test
     fun snapshotAndPendingEvents() {
         val pending = UsageEvent("x", 1, null, null, payload = buildJsonObject { })
         val state = AppState(installedRecipes = setOf("gym", "desk"), pendingEvents = listOf(pending))

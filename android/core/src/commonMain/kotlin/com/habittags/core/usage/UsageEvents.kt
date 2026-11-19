@@ -1,6 +1,7 @@
 package com.habittags.core.usage
 
 import com.habittags.core.store.AppState
+import com.habittags.core.store.TapLogEntry
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -28,7 +29,8 @@ const val REPORT_INTERVAL_MS = 6 * 60 * 60 * 1000L
 const val MAX_REPORT_DAYS = 14
 
 /**
- * The events to send now: anything queued, a snapshot of installed recipes, and per-day tap counts.
+ * The events to send now: anything queued, a snapshot of installed recipes, and per-day tap and
+ * blocked-app reach counts (counts only; never which app).
  * Each tap is bucketed into its local day in the zone recorded when it happened (or [tz] for
  * entries saved before zones were recorded). Days already partly reported are re-sent in full, so
  * re-sending is idempotent on the server.
@@ -39,11 +41,19 @@ fun buildReport(state: AppState, now: Instant, tz: TimeZone): List<UsageEvent> {
         payload = buildJsonObject { put("recipes", JsonArray(state.installedRecipes.sorted().map(::JsonPrimitive))) },
     )
     val lastReport = state.lastReportMs.takeIf { it > 0 }?.let(Instant::fromEpochMilliseconds)
-    // One event per (recipe, local day): the server keys usage on that pair, so taps on the same
-    // date in two zones are summed, and the event carries the zone of the day's latest tap.
+    val taps = dailyCounts("tap_count", state.tapLog, lastReport, now, tz)
+    val reaches = dailyCounts("block_reach", state.reachLog, lastReport, now, tz)
+    return state.pendingEvents + snapshot + taps + reaches
+}
+
+/**
+ * One [type] event per (recipe, local day): the server keys usage on that pair, so entries on the same
+ * date in two zones are summed, and the event carries the zone of the day's latest entry.
+ */
+private fun dailyCounts(type: String, log: List<TapLogEntry>, lastReport: Instant?, now: Instant, tz: TimeZone): List<UsageEvent> {
     data class DayCount(val count: Int, val latestMs: Long, val zone: String)
     val counts = mutableMapOf<Pair<String, LocalDate>, DayCount>()
-    for (entry in state.tapLog) {
+    for (entry in log) {
         val recipe = entry.recipeId ?: continue
         val zone = entry.zone?.let { runCatching { TimeZone.of(it) }.getOrNull() } ?: tz
         val day = Instant.fromEpochMilliseconds(entry.atMs).toLocalDateTime(zone).date
@@ -57,18 +67,17 @@ fun buildReport(state: AppState, now: Instant, tz: TimeZone): List<UsageEvent> {
             zone = if (prev == null || entry.atMs >= prev.latestMs) zone.id else prev.zone,
         )
     }
-    val taps = counts.entries
+    return counts.entries
         .sortedWith(compareBy({ it.key.second }, { it.key.first }))
         .map { (key, value) ->
             UsageEvent(
-                type = "tap_count", v = 1, day = key.second.toString(), tz = value.zone,
+                type = type, v = 1, day = key.second.toString(), tz = value.zone,
                 payload = buildJsonObject {
                     put("recipe", JsonPrimitive(key.first))
                     put("count", JsonPrimitive(value.count))
                 },
             )
         }
-    return state.pendingEvents + snapshot + taps
 }
 
 fun reportDue(state: AppState, nowMs: Long): Boolean = nowMs - state.lastReportMs >= REPORT_INTERVAL_MS

@@ -35,6 +35,24 @@ class DiscoverTest {
     }
 
     @Test
+    fun sectionsByPlace() {
+        val places = mapOf("gym" to "workout", "desk" to "desk", "bed" to "bed", "door" to "somewhere")
+        val placed = snapshot.copy(catalog = snapshot.catalog.copy(recipes = snapshot.catalog.recipes.map { it.copy(place = places[it.id]) }))
+        val sections = discoverSections(placed, emptySet(), now).map { (title, rs) -> title to rs.map { it.id } }
+        assertEquals(
+            listOf(
+                "New recipes" to listOf("new2", "new4", "new3"),
+                "For your desk" to listOf("desk"),
+                "For bedtime" to listOf("bed"),
+                "For workouts" to listOf("gym"),
+                "More recipes" to listOf("door", "new1", "oct31"),
+            ),
+            sections,
+        )
+        assertEquals(emptyList(), discoverSections(placed, placed.catalog.recipes.map { it.id }.toSet(), now))
+    }
+
+    @Test
     fun retiredRecipesAreHidden() {
         val retired = snapshot.copy(meta = snapshot.meta + ("gym" to snapshot.meta.getValue("gym").copy(retired = true)))
         assertEquals(false, discoverOrder(retired, emptySet(), now).any { it.id == "gym" })
