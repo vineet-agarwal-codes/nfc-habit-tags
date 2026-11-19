@@ -114,6 +114,7 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
     var custom by remember { mutableStateOf("") }
     var mode by remember { mutableStateOf(MODE_RESTING) }
     var busy by remember { mutableStateOf(false) }
+    var waiting by remember { mutableStateOf(false) }
     var recordStatus by remember { mutableStateOf<String?>(null) }
     var observation by remember { mutableStateOf<ZoneLab.Observation?>(null) }
     var answered by remember { mutableStateOf(false) }
@@ -191,21 +192,24 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
             busy = true
             answered = false
             scope.launch {
-                observation = ZoneLab.observe(context, "live")
+                waiting = false
+                observation = ZoneLab.observe(context, "live", waitForFresh = true, onWaiting = { waiting = true })
+                waiting = false
                 busy = false
             }
         }) { Text("Where am I?") }
         if (recordings.isEmpty()) Text("Record at least one spot first.", style = MaterialTheme.typography.bodySmall)
-        observation?.let { obs ->
+        if (waiting) Text("Waiting for a fresh Wi-Fi scan — Android allows only a few per minute. Up to 2 minutes.", style = MaterialTheme.typography.bodySmall)
+        if (!busy) observation?.let { obs ->
             val g = obs.guess
             if (g == null) {
-                Text("No guess yet.")
+                Text("Couldn't get a fresh Wi-Fi scan, so no guess. Try again in a minute.")
             } else {
                 Text(
                     g.scores.entries.sortedByDescending { it.value }.joinToString(" · ") { "${it.key} ${(it.value * 100).roundToInt()}%" },
                     style = MaterialTheme.typography.titleMedium,
                 )
-                if (!obs.sample.scanFresh) Text("(Wi-Fi scan was throttled; used the last scan.)", style = MaterialTheme.typography.bodySmall)
+                if (!obs.sample.scanFresh) Text("(Used a Wi-Fi scan from the last minute.)", style = MaterialTheme.typography.bodySmall)
                 if (!answered) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Button(onClick = {

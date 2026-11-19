@@ -49,10 +49,27 @@ object ZoneLab {
 
     data class Observation(val id: String, val sample: ZoneSample, val guess: Guess?)
 
-    /** Takes one sample (fresh scan if Android allows, else the cached list, flagged), guesses and queues it. */
-    suspend fun observe(context: Context, source: String): Observation {
-        val sample = ZoneSensing.sample(context, ZoneSensing.scanSource(context).scan())
-        val guess = ZoneClassifier.guess(ZoneLabStore.recordings.value, sample)
+    /** A cached scan older than this may come from another spot, so no guess is made from it. */
+    const val STALE_SCAN_MS = 60_000L
+    private const val LIVE_WAIT_MS = 2 * 60_000L
+
+    /**
+     * Takes one sample and guesses, but only from a recent scan. "Where am I?" ([waitForFresh]) retries
+     * until Android allows a fresh scan (it limits foreground apps to 4 scans per 2 minutes); tracking
+     * takes what it gets. Every sample is still queued for analysis, flagged fresh or not.
+     */
+    suspend fun observe(context: Context, source: String, waitForFresh: Boolean = false, onWaiting: () -> Unit = {}): Observation {
+        val scanner = ZoneSensing.scanSource(context)
+        val deadline = System.currentTimeMillis() + LIVE_WAIT_MS
+        var scan = scanner.scan()
+        while (waitForFresh && !scan.fresh && System.currentTimeMillis() < deadline) {
+            onWaiting()
+            delay(THROTTLED_RETRY_MS)
+            scan = scanner.scan()
+        }
+        val sample = ZoneSensing.sample(context, scan)
+        val usable = scan.fresh || (scan.ageMs ?: Long.MAX_VALUE) <= STALE_SCAN_MS
+        val guess = if (usable) ZoneClassifier.guess(ZoneLabStore.recordings.value, sample) else null
         val id = UUID.randomUUID().toString()
         ZoneLabStore.enqueue(context, listOf(ZoneEvents.observed(id, source, sample, guess, Clock.System.now(), TimeZone.currentSystemDefault())))
         return Observation(id, sample, guess)
