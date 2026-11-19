@@ -52,7 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.habittags.app.DebugSettings
-import com.habittags.app.ui.HabitTheme
+import com.habittags.app.ui.theme.MiseTheme
 import com.habittags.core.zone.UNKNOWN_SPOT
 import com.habittags.core.zone.MODE_POCKET
 import com.habittags.core.zone.MODE_RESTING
@@ -72,7 +72,7 @@ class ZoneLabActivity : ComponentActivity() {
         ZoneTrackingService.resumeIfWanted(this)
         readAsk(intent)
         // Surface paints the theme's background; without it a dark-mode phone got light text on the light window.
-        setContent { HabitTheme { Surface(Modifier.fillMaxSize()) { ZoneLabScreen(askFor) } } }
+        setContent { MiseTheme { Surface(Modifier.fillMaxSize()) { ZoneLabScreen(askFor) } } }
     }
 
     override fun onNewIntent(intent: Intent) {

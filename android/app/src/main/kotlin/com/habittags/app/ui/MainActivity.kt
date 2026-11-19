@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateOf
 import com.habittags.app.HabitTagsApp
 import com.habittags.app.block.BlockController
+import com.habittags.app.ui.theme.MiseTheme
 
 class MainActivity : ComponentActivity() {
     /** Latest intent-driven request (set up a tag, show a checklist, open the gate); consumed by [AppNav]. */
@@ -17,7 +18,7 @@ class MainActivity : ComponentActivity() {
         pending.value = intent
         HabitTagsApp.from(this).catalogNow()
         BlockController.sync(this)
-        setContent { HabitTheme { AppNav(this) } }
+        setContent { MiseTheme { AppNav(this) } }
     }
 
     override fun onNewIntent(intent: Intent) {

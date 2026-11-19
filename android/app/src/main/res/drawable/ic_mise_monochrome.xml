@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mise mark (monochrome themed icon): a lowercase m whose last stroke ends in a notched tag edge. 108dp adaptive canvas, art inside the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:strokeColor="#000000" android:strokeWidth="8" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M37,72 L37,50 Q37,41 45.5,41 Q54,41 54,50 L54,72 M54,50 Q54,41 62.5,41 Q71,41 71,50 L71,62" />
+    <path android:fillColor="#000000" android:pathData="M67,61 L75,61 L75,74 L71,70.5 L67,74 Z" />
+</vector>
