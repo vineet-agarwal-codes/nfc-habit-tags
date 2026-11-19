@@ -66,6 +66,8 @@ class ZoneLabActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ZoneLabStore.load(this)
+        // On screen, Android always allows the location service, so pick tracking back up if it was left on.
+        ZoneTrackingService.resumeIfWanted(this)
         readAsk(intent)
         // Surface paints the theme's background; without it a dark-mode phone got light text on the light window.
         setContent { HabitTheme { Surface(Modifier.fillMaxSize()) { ZoneLabScreen(askFor) } } }
@@ -122,7 +124,7 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
     var recordStatus by remember { mutableStateOf<String?>(null) }
     var observation by remember { mutableStateOf<ZoneLab.Observation?>(null) }
     var answered by remember { mutableStateOf(false) }
-    var tracking by remember { mutableStateOf(ZoneTrackingService.running) }
+    var tracking by remember { mutableStateOf(ZoneTrackingService.wanted(context)) }
     val scroll = rememberScrollState()
     val nameFocus = remember { FocusRequester() }
 

@@ -48,6 +48,7 @@ class ZoneTrackingService : LifecycleService(), SensorEventListener {
         } catch (e: SecurityException) {
             // A location service may only start while the app is on screen; the switch shows it as off.
             Log.w(TAG, "can't start lab tracking from the background", e)
+            if (wanted(this)) notifyPaused(this)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -163,13 +164,53 @@ class ZoneTrackingService : LifecycleService(), SensorEventListener {
             nm.createNotificationChannel(NotificationChannel(ASK_CHANNEL, "Zone lab questions", NotificationManager.IMPORTANCE_DEFAULT))
         }
 
+        private const val KEY_WANTED = "trackingWanted"
+        private const val PAUSED_NOTIFICATION_ID = 4103
+
+        /** Whether the user left the switch on; survives app updates and reboots (the service doesn't). */
+        fun wanted(context: Context): Boolean =
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_WANTED, false)
+
+        private fun setWanted(context: Context, on: Boolean) =
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_WANTED, on).apply()
+
         fun start(context: Context) {
+            setWanted(context, true)
             createChannels(context)
+            context.getSystemService(NotificationManager::class.java).cancel(PAUSED_NOTIFICATION_ID)
             ContextCompat.startForegroundService(context, Intent(context, ZoneTrackingService::class.java))
         }
 
         fun stop(context: Context) {
+            setWanted(context, false)
             context.startService(Intent(context, ZoneTrackingService::class.java).setAction(ACTION_STOP))
+        }
+
+        /** After an update or reboot: restart if the user had tracking on; if Android refuses, ask for a tap. */
+        fun resumeIfWanted(context: Context) {
+            if (!wanted(context) || running) return
+            try {
+                start(context)
+            } catch (e: Exception) {
+                Log.w(TAG, "can't resume lab tracking from the background", e)
+                notifyPaused(context)
+            }
+        }
+
+        private fun notifyPaused(context: Context) {
+            createChannels(context)
+            val open = PendingIntent.getActivity(
+                context, PAUSED_NOTIFICATION_ID, Intent(context, ZoneLabActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+            val n = NotificationCompat.Builder(context, ASK_CHANNEL)
+                .setSmallIcon(R.drawable.ic_tag)
+                .setContentTitle("Zone lab tracking paused")
+                .setContentText("Android stopped it after an update or restart. Tap to turn it back on.")
+                .setContentIntent(open)
+                .setAutoCancel(true)
+                .build()
+            context.getSystemService(NotificationManager::class.java).notify(PAUSED_NOTIFICATION_ID, n)
         }
     }
 }
