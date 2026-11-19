@@ -1,5 +1,6 @@
 package com.habittags.app.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,17 +31,22 @@ fun SetupTagScreen(onPick: (String) -> Unit) {
     val installed = snapshot.catalog.recipes.filter { it.id in state.installedRecipes && isUsable(it) }.sortedBy { it.title }
     val choices = installed + discoverOrder(snapshot, state.installedRecipes, Clock.System.now())
 
-    LazyColumn(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = com.habittags.app.ui.components.ScreenPadding), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("Set up this tag", style = MaterialTheme.typography.headlineSmall)
-            Text("This tag isn't set up on this phone yet. Pick what it should do.")
+            com.habittags.app.ui.components.ScreenTitle("Set up this tag")
+            Text("This tag isn't set up on this phone yet. Pick the space it belongs to.", style = MaterialTheme.typography.bodyLarge)
         }
         items(choices, key = { it.id }) { recipe ->
-            Card(Modifier.fillMaxWidth().clickable { onPick(recipe.id) }) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(recipe.title, style = MaterialTheme.typography.titleMedium)
-                    Text(recipe.description, style = MaterialTheme.typography.bodyMedium, maxLines = 1)
-                }
+            Column(
+                Modifier.fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant, com.habittags.app.ui.components.CardShape)
+                    .clickable { onPick(recipe.id) }.padding(20.dp),
+            ) {
+                Text(
+                    if (recipe.id in state.installedRecipes) app.spaceName(recipe.id) else recipe.title.substringAfter(": "),
+                    style = MaterialTheme.typography.headlineSmall,
+                )
+                Text(recipe.description, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
             }
         }
     }

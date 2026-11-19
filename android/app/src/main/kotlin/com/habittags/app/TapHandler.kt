@@ -60,7 +60,7 @@ object TapHandler {
             val entry = TapLogEntry(System.currentTimeMillis(), tag.tagId, tag.label, tag.recipeId, TimeZone.currentSystemDefault().id, source)
             app.update { it.copy(tapLog = (it.tapLog + entry).takeLast(MAX_LOG)) }
         }
-        val title = tag.label
+        val title = app.spaceName(tag.recipeId)
         val message = when (result) {
             TapResult.UnknownTag -> null
             TapResult.RecipeUnavailable -> "This recipe isn't available on this phone"
@@ -70,14 +70,14 @@ object TapHandler {
                 app.update { it.copy(active = it.active + (key to mode)) }
                 EffectRunner.run(context, result.effects, recipe, tag.params)
                 val off = mode.autoOffAt
-                if (off == null) "$title on" else "$title on · off at ${formatTime(off)}"
+                if (off == null) "$title is on" else "$title is on · ends ${formatTime(off)}"
             }
             is TapResult.Ended -> {
                 app.update { it.copy(active = it.active - key) }
                 EffectRunner.run(context, result.effects, recipe, tag.params)
-                "$title off"
+                "$title is off"
             }
-            is TapResult.StrictRefused -> "Strict mode: ${minutesLeft(result.remainingMs)} min left"
+            is TapResult.StrictRefused -> "$title is strict for ${minutesLeft(result.remainingMs)} more min"
             is TapResult.Ran -> {
                 EffectRunner.run(context, result.effects, recipe, tag.params)
                 title
@@ -85,7 +85,7 @@ object TapHandler {
             is TapResult.OutsideHours -> {
                 EffectRunner.run(context, result.effects, recipe, tag.params)
                 // Start now shows this in a dialog instead (see StartNowButton).
-                if (source == "app") null else outsideHoursMessage(recipe?.title ?: title, result.windows)
+                if (source == "app") null else outsideHoursMessage(title, result.windows)
             }
         }
         BlockController.sync(context)

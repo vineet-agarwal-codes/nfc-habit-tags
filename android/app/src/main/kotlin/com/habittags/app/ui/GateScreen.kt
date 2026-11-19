@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.habittags.app.ui.theme.tintColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -68,18 +69,23 @@ fun GateScreen(tagId: String, onDone: () -> Unit) {
     val matched = FrictionGate.matchedLength(typed, passage)
     val typo = FrictionGate.hasTypo(typed, passage)
     val colors = MaterialTheme.colorScheme
-    val doneColor = Color(0xFF2E7D32)
+    val mode = state.active[tagId]
+    val space = mode?.let { app.spaceColour(it.recipeId) }
+    val field = space?.let { Color(it.field.toInt()) } ?: colors.primary
+    val tint = space?.let { it.tintColor() } ?: colors.surfaceVariant
+    // Typed text recedes; the next letter sits on the space's tint.
+    val doneColor = colors.onSurfaceVariant
 
     Column(Modifier.fillMaxSize().imePadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("End $label early?", style = MaterialTheme.typography.headlineSmall)
+        Text("End $label early?", style = MaterialTheme.typography.headlineMedium, color = field)
         Text(
-            "Copy the text below into the box at the bottom, letter by letter. Or tap your tag to end it instantly.",
+            "Type the text below to end $label now, letter by letter. Or tap your tag to end it for free.",
             style = MaterialTheme.typography.bodyMedium,
             color = colors.onSurfaceVariant,
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("${FrictionGate.wordsTyped(typed, passage)} of $totalWords words", style = MaterialTheme.typography.labelLarge)
-            LinearProgressIndicator(progress = { matched.toFloat() / passage.length }, modifier = Modifier.weight(1f))
+            LinearProgressIndicator(progress = { matched.toFloat() / passage.length }, modifier = Modifier.weight(1f), color = field, trackColor = colors.surfaceVariant)
         }
 
         val scroll = rememberScrollState()
@@ -90,13 +96,17 @@ fun GateScreen(tagId: String, onDone: () -> Unit) {
             val top = l.getLineTop(l.getLineForOffset(matched.coerceAtMost(passage.length)))
             scroll.animateScrollTo((top - lineSlack).toInt().coerceAtLeast(0))
         }
-        Card(Modifier.fillMaxWidth().weight(1f)) {
+        Card(
+            Modifier.fillMaxWidth().weight(1f),
+            shape = com.habittags.app.ui.components.CardShape,
+            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = colors.surfaceVariant),
+        ) {
             Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(color = doneColor)) { append(passage.take(matched)) }
                     if (matched < passage.length) {
                         val next = if (typo) SpanStyle(background = colors.errorContainer, color = colors.onErrorContainer, fontWeight = FontWeight.Bold)
-                        else SpanStyle(background = colors.primaryContainer, color = colors.onPrimaryContainer, fontWeight = FontWeight.Bold)
+                        else SpanStyle(background = tint, color = colors.onSurface, fontWeight = FontWeight.Bold)
                         withStyle(next) { append(passage[matched]) }
                         withStyle(SpanStyle(color = colors.onSurface)) { append(passage.substring(matched + 1)) }
                     }

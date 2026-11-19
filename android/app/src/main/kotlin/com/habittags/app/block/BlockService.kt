@@ -20,6 +20,7 @@ import com.habittags.app.TapHandler
 import com.habittags.app.ui.MainActivity
 import com.habittags.core.mode.ActiveMode
 import com.habittags.core.mode.ModeEngine
+import com.habittags.core.store.TapLogEntry
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -31,6 +32,8 @@ class BlockService : LifecycleService() {
     private var lastQueryMs = 0L
     private var foregroundPackage: String? = null
     private var lastLoggedFg: String? = null
+    /** The last foreground app we counted a reach for, so staying in it doesn't count again. */
+    private var lastReachFg: String? = null
     private lateinit var overlay: BlockOverlay
 
     override fun onCreate() {
@@ -72,7 +75,11 @@ class BlockService : LifecycleService() {
                 Log.d(TAG, "foreground=$fg blocking=${blocking.map { it.tagId }}")
                 lastLoggedFg = fg
             }
-            if (blocking.isEmpty()) overlay.hide() else overlay.show(overlayText(blocking))
+            if (fg != lastReachFg) {
+                lastReachFg = fg
+                if (blocking.isNotEmpty() && fg != null) recordReach(fg, blocking)
+            }
+            if (blocking.isEmpty()) overlay.hide() else showOverlay(blocking)
             delay(POLL_MS)
         }
     }
@@ -89,12 +96,34 @@ class BlockService : LifecycleService() {
         return foregroundPackage
     }
 
-    private fun overlayText(modes: List<ActiveMode>): String {
+    /** Counts one reach on each running mode that blocks [pkg]; reported later as a daily count, never the app. */
+    private fun recordReach(pkg: String, modes: List<ActiveMode>) {
         val app = HabitTagsApp.from(this)
-        return modes.joinToString("\n") { mode ->
-            val title = app.modeLabel(mode)
-            mode.autoOffAt?.let { "$title is on · ends at ${TapHandler.formatTime(it)}" } ?: "$title is on"
+        val now = System.currentTimeMillis()
+        val zone = kotlinx.datetime.TimeZone.currentSystemDefault().id
+        app.update { s ->
+            s.copy(
+                active = ModeEngine.recordReach(s.active, pkg),
+                reachLog = (s.reachLog + modes.map { TapLogEntry(now, it.tagId, "", it.recipeId, zone, "reach") }).takeLast(MAX_REACH_LOG),
+            )
         }
+    }
+
+    private fun showOverlay(modes: List<ActiveMode>) {
+        val app = HabitTagsApp.from(this)
+        // Re-read: the reach just recorded should show at once.
+        val live = modes.map { app.state.value.active[it.tagId] ?: it }
+        val first = live.first()
+        val ends = live.mapNotNull { it.autoOffAt }.maxOrNull()
+        val reaches = live.maxOf { it.reaches }
+        overlay.show(
+            colour = app.spaceColour(first.recipeId),
+            title = live.joinToString(" and ") { app.modeLabel(it) } + " is on",
+            detail = listOfNotNull(
+                ends?.let { "ends ${TapHandler.formatTime(it)}" },
+                reaches.takeIf { it > 0 }?.let { com.habittags.app.ui.components.reachText(it) },
+            ).joinToString("\n"),
+        )
     }
 
     private fun notification(active: Map<String, ActiveMode>): Notification {
@@ -121,6 +150,7 @@ class BlockService : LifecycleService() {
     }
 
     companion object {
+        private const val MAX_REACH_LOG = 2_000
         private const val TAG = "BlockService"
         private const val NOTIFICATION_ID = 1
         private const val CHANNEL_ID = "active_modes"

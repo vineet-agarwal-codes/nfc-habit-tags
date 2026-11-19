@@ -15,6 +15,8 @@ import com.habittags.core.realtime.Realtime
 import com.habittags.core.recipe.Catalog
 import com.habittags.core.recipe.Recipe
 import com.habittags.core.recipe.isUsable
+import com.habittags.app.ui.theme.SpaceColour
+import com.habittags.core.space.Spaces
 import com.habittags.core.store.AppState
 import com.habittags.core.store.withDeviceId
 import com.habittags.core.usage.reportDue
@@ -58,6 +60,8 @@ class HabitTagsApp : Application() {
         catalogRepository = CatalogRepository(this, backend, { _state.value.installedRecipes }, scope)
         catalog = catalogRepository.snapshot.map<CatalogSnapshot, Catalog?> { it.catalog }
             .stateIn(scope, SharingStarted.Eagerly, catalogRepository.snapshot.value.catalog)
+        // Spaces for recipes installed before the catalog was known get their names once it loads.
+        scope.launch { catalogRepository.snapshot.collect { update { it } } }
         realtime = RealtimeWatcher(http, Realtime.socketUrl(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_KEY), scope) {
             catalogRepository.refreshSoon()
         }
@@ -74,9 +78,14 @@ class HabitTagsApp : Application() {
     }
 
     fun update(fn: (AppState) -> AppState): AppState = synchronized(this) {
-        val next = fn(_state.value)
-        store.save(next)
-        _state.value = next
+        // Every installed recipe always has a space (name + colour), whichever screen changed the state.
+        val next = fn(_state.value).let { s ->
+            if (::catalogRepository.isInitialized) Spaces.ensure(s) { id -> catalogNow().recipes.firstOrNull { it.id == id } } else s
+        }
+        if (next != _state.value) {
+            store.save(next)
+            _state.value = next
+        }
         next
     }
 
@@ -84,9 +93,13 @@ class HabitTagsApp : Application() {
 
     fun recipe(id: String): Recipe? = catalogNow().recipes.firstOrNull { it.id == id }?.takeIf(::isUsable)
 
-    /** A running mode's name: its tag's label, or the recipe title when it was started from the app. */
-    fun modeLabel(mode: ActiveMode): String =
-        _state.value.tags[mode.tagId]?.label ?: catalogNow().recipes.firstOrNull { it.id == mode.recipeId }?.title ?: mode.recipeId
+    /** A running mode's name: its space ("Desk"), else the recipe title. */
+    fun modeLabel(mode: ActiveMode): String = spaceName(mode.recipeId)
+
+    fun spaceName(recipeId: String): String =
+        _state.value.spaces[recipeId]?.name ?: catalogNow().recipes.firstOrNull { it.id == recipeId }?.let(Spaces::defaultName) ?: recipeId
+
+    fun spaceColour(recipeId: String): SpaceColour = SpaceColour.of(_state.value.spaces[recipeId]?.colour)
 
     fun groups(): Map<String, Set<String>> {
         val overrides = _state.value.groupOverrides

@@ -152,3 +152,22 @@ fun PermissionCards(recipe: Recipe): Boolean {
     }
     return needed.all { it.granted }
 }
+
+/** "Blocks social media and video apps, turns on Do Not Disturb, ends after 1 h 30 min." */
+fun whatItDoes(recipe: Recipe, groupTitles: Map<String, String>, userValues: Map<String, Int> = emptyMap()): String {
+    val actions = recipe.rules.flatMap { it.actions }
+    val parts = buildList {
+        val groups = actions.filterIsInstance<BlockGroups>().flatMap { it.groups }.distinct()
+            .map { (groupTitles[it] ?: it).lowercase() }
+        if (groups.isNotEmpty()) add("blocks ${groups.joinToString(" and ")} apps")
+        if (actions.any { it is Dnd }) add("turns on Do Not Disturb")
+        actions.filterIsInstance<com.habittags.core.recipe.Timer>().firstOrNull()?.let { t ->
+            com.habittags.core.recipe.bindInt(t.minutes, recipe.params, userValues)?.let { add("starts a ${formatMinutes(it)} timer") }
+        }
+        if (actions.any { it is com.habittags.core.recipe.Checklist } || recipe.endActions.any { it is com.habittags.core.recipe.Checklist }) add("shows a checklist")
+        runCatching { com.habittags.core.recipe.bindInt(recipe.autoOffMinutes, recipe.params, userValues) }.getOrNull()
+            ?.takeIf { it > 0 && recipe.mode == Mode.toggle }?.let { add("ends after ${formatMinutes(it)}") }
+    }
+    if (parts.isEmpty()) return recipe.description
+    return parts.joinToString(", ").replaceFirstChar { it.uppercase() } + "."
+}
