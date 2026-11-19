@@ -74,6 +74,29 @@ class ZoneClassifierTest {
     }
 
     @Test
+    fun farFromEveryRecordingIsUnknown() {
+        val recordings = listOf(rec("Desk", s("a" to -45, "b" to -70), s("a" to -47, "b" to -72)))
+        val cases = listOf(
+            // sample, expected spot, confidence range
+            Triple(s("a" to -46, "b" to -71), "Desk", 0.9..1.0),            // at the desk
+            Triple(s("c" to -50, "d" to -60), UNKNOWN_SPOT, 0.9..1.0),     // other APs entirely
+            Triple(s("a" to -75, "b" to -90), UNKNOWN_SPOT, 0.5..1.0),     // same APs, much weaker
+        )
+        for ((sample, spot, range) in cases) {
+            val g = ZoneClassifier.guess(recordings, sample)!!
+            assertEquals(spot, g.spot, "$sample")
+            assertTrue(g.confidence in range, "$sample confidence ${g.confidence}")
+            assertEquals(1.0, g.scores.values.sum(), 1e-9)
+        }
+    }
+
+    @Test
+    fun matchFallsOffWithDistance() {
+        val cases = listOf(0.0 to 1.0, ZoneClassifier.KNOWN_DB to 1.0, (ZoneClassifier.KNOWN_DB + ZoneClassifier.UNKNOWN_DB) / 2 to 0.5, ZoneClassifier.UNKNOWN_DB to 0.0, 99.0 to 0.0)
+        for ((d, expected) in cases) assertEquals(expected, ZoneClassifier.match(d), 1e-9, "d=$d")
+    }
+
+    @Test
     fun noRecordingsMeansNoGuess() {
         assertNull(ZoneClassifier.guess(emptyList(), s("a" to -50)))
         assertTrue(ZoneClassifier.guess(listOf(rec("Desk")), s("a" to -50)) == null)

@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.habittags.app.R
+import com.habittags.core.zone.UNKNOWN_SPOT
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -103,7 +104,7 @@ class ZoneTrackingService : LifecycleService(), SensorEventListener {
         )
         val notification = NotificationCompat.Builder(this, ASK_CHANNEL)
             .setSmallIcon(R.drawable.ic_tag)
-            .setContentTitle("Are you at $spot?")
+            .setContentTitle(if (spot == UNKNOWN_SPOT) "Are you somewhere you haven't recorded?" else "Are you at $spot?")
             .setContentText("Zone lab is checking its guess.")
             .setAutoCancel(true)
             .addAction(0, "Yes", yes)

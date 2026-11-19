@@ -22,6 +22,9 @@ MISSING_DBM = -100
 K = 5
 MAG_WEIGHT = 1.0
 ORIENT_WEIGHT = 0.1
+KNOWN_DB = 10.0
+UNKNOWN_DB = 25.0
+UNKNOWN_SPOT = "Unknown place"
 FEATURE_SETS = {"wifi": (False, False), "wifi+mag": (True, False), "wifi+mag+orient": (True, True)}
 
 
@@ -56,7 +59,8 @@ def distance(a, b, magnet, orientation):
 
 
 def guess(train, sample, magnet, orientation, k=K):
-    """train: list of (spot, sample). Returns (spot, confidence) or None."""
+    """train: list of (spot, sample). Returns (spot, confidence) or None; mirrors ZoneClassifier.guess,
+    including UNKNOWN_SPOT when the nearest recording is far away."""
     neighbours = sorted(((distance(sample, s, magnet, orientation), spot) for spot, s in train), key=lambda x: x[0])[:k]
     if not neighbours:
         return None
@@ -64,8 +68,11 @@ def guess(train, sample, magnet, orientation, k=K):
     for d, spot in neighbours:
         weights[spot] += 1.0 / (1.0 + d)
     total = sum(weights.values())
-    spot = max(weights, key=weights.get)
-    return spot, weights[spot] / total
+    match = min(1.0, max(0.0, (UNKNOWN_DB - neighbours[0][0]) / (UNKNOWN_DB - KNOWN_DB)))
+    scores = {spot: w / total * match for spot, w in weights.items()}
+    scores[UNKNOWN_SPOT] = 1.0 - match
+    spot = max(scores, key=scores.get)
+    return spot, scores[spot]
 
 
 def load_live(device):

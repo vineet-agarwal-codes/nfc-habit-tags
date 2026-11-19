@@ -49,6 +49,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import com.habittags.app.DebugSettings
 import com.habittags.app.ui.HabitTheme
+import com.habittags.core.zone.UNKNOWN_SPOT
 import com.habittags.core.zone.MODE_POCKET
 import com.habittags.core.zone.MODE_RESTING
 import kotlinx.coroutines.launch
@@ -261,7 +262,7 @@ private fun SpotPicker(title: String, onPick: (String) -> Unit, onDismiss: () ->
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ZoneLabStore.spots().forEach { s -> OutlinedButton(onClick = { onPick(s) }) { Text(s) } }
+                    (ZoneLabStore.spots() + UNKNOWN_SPOT).forEach { s -> OutlinedButton(onClick = { onPick(s) }) { Text(s) } }
                 }
                 OutlinedTextField(value = custom, onValueChange = { custom = it }, label = { Text("Somewhere else") }, singleLine = true)
             }

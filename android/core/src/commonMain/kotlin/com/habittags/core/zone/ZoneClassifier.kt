@@ -10,8 +10,15 @@ enum class FeatureSet(val magnet: Boolean, val orientation: Boolean) {
     WIFI_MAG_ORIENT(true, true),
 }
 
-/** [scores] are each spot's share of the neighbours' weight (they sum to 1). */
-data class Guess(val spot: String, val confidence: Double, val scores: Map<String, Double>)
+/** Reported when the sample is far from every recorded one. */
+const val UNKNOWN_SPOT = "Unknown place"
+
+/**
+ * [scores] cover every candidate spot plus [UNKNOWN_SPOT] and sum to 1: each spot's share of the
+ * neighbours' weight scaled by how well the nearest recording matches, the rest going to unknown.
+ * [nearest] is the distance to the closest recorded sample.
+ */
+data class Guess(val spot: String, val confidence: Double, val scores: Map<String, Double>, val nearest: Double = 0.0)
 
 /**
  * Weighted k-nearest neighbours over every recorded sample. Keep in step with
@@ -24,6 +31,13 @@ object ZoneClassifier {
     const val MAG_WEIGHT = 1.0
     /** dB of Wi-Fi distance one degree of orientation difference is worth. */
     const val ORIENT_WEIGHT = 0.1
+    /** Nearest recording within this distance: a full match. Initial values; tune from lab data. */
+    const val KNOWN_DB = 10.0
+    /** Nearest recording this far or further: certainly somewhere unrecorded. */
+    const val UNKNOWN_DB = 25.0
+
+    /** 1 when the nearest recording is close, falling linearly to 0 between [KNOWN_DB] and [UNKNOWN_DB]. */
+    fun match(nearest: Double): Double = ((UNKNOWN_DB - nearest) / (UNKNOWN_DB - KNOWN_DB)).coerceIn(0.0, 1.0)
 
     /** RMS difference in dBm over the union of BSSIDs, a missing AP counting as [MISSING_DBM]. */
     fun wifiDistance(a: List<WifiReading>, b: List<WifiReading>): Double {
@@ -70,8 +84,10 @@ object ZoneClassifier {
         val weights = mutableMapOf<String, Double>()
         for ((spot, d) in neighbours) weights[spot] = (weights[spot] ?: 0.0) + 1.0 / (1.0 + d)
         val total = weights.values.sum()
-        val scores = weights.mapValues { it.value / total }
+        val nearest = neighbours.first().second
+        val m = match(nearest)
+        val scores = weights.mapValues { it.value / total * m } + (UNKNOWN_SPOT to 1.0 - m)
         val best = scores.maxByOrNull { it.value }!!
-        return Guess(best.key, best.value, scores)
+        return Guess(best.key, best.value, scores, nearest)
     }
 }
