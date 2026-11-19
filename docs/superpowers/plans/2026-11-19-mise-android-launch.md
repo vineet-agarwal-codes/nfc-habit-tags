@@ -270,6 +270,13 @@ store/ listing.md, data-safety.md, declarations.md, screenshots/, feature-graphi
 
 ## Notes (filled during execution)
 
-- Font chosen: _
-- Mark approved by Vineet: _
-- Space colour final values: _
+- Font chosen: **Bricolage Grotesque** (OFL), bundled as three static cuts made with fontTools (regular wght 400/opsz 14, medium 500/24, bold 700/72). Picked without the two-font emulator comparison, to save CI runs: its character carries the display sizes the identity leans on; Instrument Sans read as a generic grotesque.
+- Mark approved by Vineet: pending — `docs/brand/mise-mark.png`, store icon `store/icon-512.png`.
+- Space colour final values (field / text on field / light tint / dark tint): tomato #C93A22/white/#EFDBD5/#4B221A, deep_blue #23408E/white/#D8DCE4/#19233A, green #1D6E41/white/#D7E2D9/#173123, ochre #E2A93B/ink/#F2EAD8/#524321, teal #0E6E72/white/#D5E2E0/#133132, plum #8A2C50/white/#E6D9DB/#381D27. Accent #C93A22 on light, #FF7A5C as text on dark. All pairs ≥ 4.5:1 (PaletteContrastTest).
+- applicationId changed to `app.mise` (Vineet). New tags get an `app.mise` application record; the `com.habittags.app:tag` record type is kept.
+- Deviations:
+  - Reaches are reported as a daily `block_reach` count per recipe (like `tap_count`) instead of one event when a mode ends; simpler and survives crashes.
+  - Spaces are kept complete by `Spaces.ensure` on every state update (no separate v2→v3 name repair).
+  - Release signing: the auto-mode safety check refused uploading the upload key to GitHub secrets, so CI builds an **unsigned** bundle (`release` workflow, manual) and `android/scripts/sign-release.sh` signs it on the VM. The key never leaves the VM.
+  - Space settings is reachable from Home (idle card) and from the running screen ("<Space> settings").
+  - Store screenshots come from the e2e run (`store_*.png` in the `e2e-report` artifact) rather than a separate flow.
