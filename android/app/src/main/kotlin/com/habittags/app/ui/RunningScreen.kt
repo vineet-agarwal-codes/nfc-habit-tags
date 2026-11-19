@@ -41,7 +41,7 @@ fun RunningScreen(modeKey: String, onEndEarly: () -> Unit, onClose: () -> Unit) 
     val state by app.state.collectAsState()
     val mode = state.active[modeKey]
     val now = rememberNow()
-    if (mode == null || (mode.autoOffAt != null && now >= mode.autoOffAt)) {
+    if (mode == null || mode.autoOffAt?.let { now >= it } == true) {
         androidx.compose.runtime.LaunchedEffect(Unit) { onClose() }
         return
     }
