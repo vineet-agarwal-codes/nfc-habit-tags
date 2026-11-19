@@ -40,7 +40,7 @@
     {
       "id": "desk-deep-work",
       "schemaVersion": 1,
-      "version": 1,
+      "version": 2,
       "title": "Desk: Deep Work",
       "description": "Tap when you sit down to work. Social media and video apps are blocked and notifications go quiet until you tap again or the timer ends.",
       "placementHint": "Stick it on your desk where your phone rests, or under the desk edge.",
@@ -80,12 +80,17 @@
             }
           ]
         }
-      ]
+      ],
+      "space": {
+        "name": "Desk",
+        "colour": "tomato"
+      },
+      "place": "desk"
     },
     {
       "id": "bed-sleep",
       "schemaVersion": 2,
-      "version": 2,
+      "version": 3,
       "title": "Bed: Sleep Mode",
       "description": "Tap at night to block distracting apps and silence notifications. Tap again in the morning to end sleep mode and start your morning routine.",
       "placementHint": "Stick it on your bedside table where your phone stays overnight.",
@@ -164,12 +169,17 @@
             "Put on workout clothes"
           ]
         }
-      ]
+      ],
+      "space": {
+        "name": "Bed",
+        "colour": "deep_blue"
+      },
+      "place": "bed"
     },
     {
       "id": "gym-bag",
       "schemaVersion": 1,
-      "version": 1,
+      "version": 2,
       "title": "Gym Bag: Workout",
       "description": "Tap when you pick up your gym bag. Starts a one hour workout timer and logs the workout.",
       "placementHint": "Stick it inside your gym bag or on its strap.",
@@ -196,12 +206,17 @@
             }
           ]
         }
-      ]
+      ],
+      "space": {
+        "name": "Gym bag",
+        "colour": "green"
+      },
+      "place": "workout"
     },
     {
       "id": "front-door",
       "schemaVersion": 1,
-      "version": 1,
+      "version": 2,
       "title": "Front Door: Leaving Home",
       "description": "Tap on your way out for a quick checklist so you never forget the essentials.",
       "placementHint": "Stick it next to the door handle or on the key bowl.",
@@ -221,7 +236,11 @@
             }
           ]
         }
-      ]
+      ],
+      "space": {
+        "name": "Front door"
+      },
+      "place": "leaving"
     }
   ]
 }
