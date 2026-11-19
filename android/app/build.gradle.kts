@@ -15,7 +15,7 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toInt() ?: 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
         buildConfigField("String", "SUPABASE_URL", "\"https://bfwyytbghnfwnikpcugx.supabase.co\"")
         buildConfigField("String", "SUPABASE_KEY", "\"sb_publishable_eKASnJMTC64q14v01LMnEQ_IgEQVup8\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -30,11 +30,22 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        // The Play upload key comes only from the environment (~/.config/habit-tags/release.env on the VM).
+        // CI never has it, so CI release bundles are unsigned and signed on the VM (scripts/sign-release.sh).
+        System.getenv("MISE_UPLOAD_STORE_FILE")?.takeIf { file(it).exists() }?.let { store ->
+            create("upload") {
+                storeFile = file(store)
+                storePassword = System.getenv("MISE_UPLOAD_STORE_PASSWORD")
+                keyAlias = System.getenv("MISE_UPLOAD_KEY_ALIAS")
+                keyPassword = System.getenv("MISE_UPLOAD_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfigs.findByName("upload")?.let { signingConfig = it }
         }
     }
     compileOptions {

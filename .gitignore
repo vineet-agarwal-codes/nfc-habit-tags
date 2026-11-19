@@ -6,3 +6,4 @@ local.properties
 .superpowers/
 *.jks
 *.keystore
+release.env
