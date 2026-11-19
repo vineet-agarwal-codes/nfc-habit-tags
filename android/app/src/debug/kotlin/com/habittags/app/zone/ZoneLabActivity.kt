@@ -36,6 +36,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +56,7 @@ import com.habittags.app.ui.HabitTheme
 import com.habittags.core.zone.UNKNOWN_SPOT
 import com.habittags.core.zone.MODE_POCKET
 import com.habittags.core.zone.MODE_RESTING
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -123,7 +125,7 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
     var waiting by remember { mutableStateOf(false) }
     var recordStatus by remember { mutableStateOf<String?>(null) }
     var observation by remember { mutableStateOf<ZoneLab.Observation?>(null) }
-    var answered by remember { mutableStateOf(false) }
+    var savedNote by remember { mutableStateOf<String?>(null) }
     var tracking by remember { mutableStateOf(ZoneTrackingService.wanted(context)) }
     val scroll = rememberScrollState()
     val nameFocus = remember { FocusRequester() }
@@ -201,7 +203,7 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
         Text("2. Where am I?", style = MaterialTheme.typography.titleMedium)
         Button(enabled = ready && !busy && recordings.isNotEmpty(), onClick = {
             busy = true
-            answered = false
+            savedNote = null
             observation = null
             scope.launch {
                 waiting = false
@@ -213,41 +215,43 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
         if (recordings.isEmpty()) Text("Record at least one spot first.", style = MaterialTheme.typography.bodySmall)
         if (busy && !waiting) Text("Checking where you are…", style = MaterialTheme.typography.bodyMedium)
         if (waiting) Text("Waiting for a fresh Wi-Fi scan — Android allows only a few per minute. Up to 2 minutes.", style = MaterialTheme.typography.bodySmall)
+        savedNote?.let { note ->
+            Text(note, style = MaterialTheme.typography.bodyMedium)
+            LaunchedEffect(note) {
+                delay(3_000)
+                savedNote = null
+            }
+        }
         if (!busy) observation?.let { obs ->
             val g = obs.guess
             if (g == null) {
                 Text("Couldn't get a fresh Wi-Fi scan, so no guess. Try again in a minute.")
             } else {
-                if (!answered) {
-                    Text("Where are you actually? Tap it:", style = MaterialTheme.typography.bodyMedium)
-                } else {
-                    Text(g.scores.entries.sortedByDescending { it.value }.joinToString(" · ") { "${it.key} ${(it.value * 100).roundToInt()}%" })
-                }
+                Text("Where are you actually? Tap it:", style = MaterialTheme.typography.bodyMedium)
                 if (!obs.sample.scanFresh) Text("(Used a Wi-Fi scan from the last minute.)", style = MaterialTheme.typography.bodySmall)
-                if (!answered) {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        g.scores.entries.sortedByDescending { it.value }.forEachIndexed { i, (candidate, score) ->
-                            val unknown = candidate == UNKNOWN_SPOT
-                            val label = "${if (unknown) "Somewhere else" else candidate} ${(score * 100).roundToInt()}%"
-                            val pick = {
-                                answered = true
-                                scope.launch { ZoneLab.answer(context, obs.id, g.spot, candidate, "live") }
-                                if (unknown) {
-                                    // An unrecorded place: go straight to teaching it.
-                                    custom = ""
-                                    recordStatus = "Name this place, then tap Record."
-                                    scope.launch {
-                                        scroll.animateScrollTo(0)
-                                        nameFocus.requestFocus()
-                                    }
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    g.scores.entries.sortedByDescending { it.value }.forEachIndexed { i, (candidate, score) ->
+                        val unknown = candidate == UNKNOWN_SPOT
+                        val name = if (unknown) "Somewhere else" else candidate
+                        val pick = {
+                            // Answered: clear the result so a later visit just shows the button again.
+                            observation = null
+                            savedNote = "Saved: $name. Thanks!"
+                            scope.launch { ZoneLab.answer(context, obs.id, g.spot, candidate, "live") }
+                            if (unknown) {
+                                // An unrecorded place: go straight to teaching it.
+                                custom = ""
+                                recordStatus = "Name this place, then tap Record."
+                                scope.launch {
+                                    scroll.animateScrollTo(0)
+                                    nameFocus.requestFocus()
                                 }
-                                Unit
                             }
-                            if (i == 0) Button(onClick = pick) { Text(label) } else OutlinedButton(onClick = pick) { Text(label) }
+                            Unit
                         }
+                        val label = "$name ${(score * 100).roundToInt()}%"
+                        if (i == 0) Button(onClick = pick) { Text(label) } else OutlinedButton(onClick = pick) { Text(label) }
                     }
-                } else {
-                    Text("Thanks — saved.")
                 }
             }
         }
@@ -279,8 +283,9 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
             title = if (guessed != null) "Not $guessed — where are you?" else "Where are you?",
             onPick = { actual ->
                 askFor.value = null
-                if (observation?.id == id) answered = true
-                scope.launch { ZoneLab.answer(context, id, guessed, actual, if (observation?.id == id) "live" else "notification") }
+                val live = observation?.id == id
+                if (live) observation = null
+                scope.launch { ZoneLab.answer(context, id, guessed, actual, if (live) "live" else "notification") }
             },
             onDismiss = { askFor.value = null },
         )

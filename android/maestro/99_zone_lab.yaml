@@ -30,5 +30,5 @@ appId: com.habittags.app
 - takeScreenshot: zone_lab_guess
 - tapOn: "Desk \\d+%"
 - extendedWaitUntil:
-    visible: "Thanks — saved."
+    visible: "Saved: Desk. Thanks!"
     timeout: 5000
