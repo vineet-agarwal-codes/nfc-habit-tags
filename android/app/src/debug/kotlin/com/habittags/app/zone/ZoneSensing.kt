@@ -51,15 +51,21 @@ class RealWifiScanSource(private val context: Context) : WifiScanSource {
             context.unregisterReceiver(receiver)
         }
         val results = wifi.scanResults.orEmpty()
+        val home = connectedSsid(wifi)
         val nowUs = SystemClock.elapsedRealtime() * 1000
         val newestUs = results.maxOfOrNull { it.timestamp }
         return WifiScan(
-            readings = results.map { WifiReading(it.BSSID, it.level, it.frequency) },
+            readings = results.map { WifiReading(it.BSSID, it.level, it.frequency, h = home != null && it.SSID == home) },
             ageMs = newestUs?.let { (nowUs - it) / 1000 },
             fresh = fresh,
             startScanReturned = accepted,
         )
     }
+
+    /** The network the phone is connected to (readable with the lab's location permission), or null. */
+    @Suppress("DEPRECATION")
+    private fun connectedSsid(wifi: WifiManager): String? =
+        wifi.connectionInfo?.ssid?.removeSurrounding("\"")?.takeIf { it.isNotBlank() && it != "<unknown ssid>" }
 
     private companion object {
         const val SCAN_TIMEOUT_MS = 15_000L

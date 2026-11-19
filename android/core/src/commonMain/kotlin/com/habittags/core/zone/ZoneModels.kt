@@ -2,9 +2,12 @@ package com.habittags.core.zone
 
 import kotlinx.serialization.Serializable
 
-/** One access point from a Wi-Fi scan: BSSID, signal strength in dBm, frequency in MHz. */
+/**
+ * One access point from a Wi-Fi scan: BSSID, signal strength in dBm, frequency in MHz, and [h] = it
+ * broadcasts the network the phone is connected to (the user's own Wi-Fi, all bands and mesh nodes).
+ */
 @Serializable
-data class WifiReading(val b: String, val r: Int, val f: Int)
+data class WifiReading(val b: String, val r: Int, val f: Int, val h: Boolean = false)
 
 /**
  * One aggregated reading of the phone's surroundings. [scanAgeMs] is how old the newest scan result

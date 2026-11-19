@@ -2,12 +2,13 @@ package com.habittags.core.zone
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ZoneClassifierTest {
     private fun s(vararg aps: Pair<String, Int>, mag: Float? = null, gravity: List<Float>? = null) =
-        ZoneSample(wifi = aps.map { WifiReading(it.first, it.second, 2412) }, magMean = mag, gravity = gravity)
+        ZoneSample(wifi = aps.map { WifiReading("00:${it.first}", it.second, 2412) }, magMean = mag, gravity = gravity)
 
     private fun rec(spot: String, vararg samples: ZoneSample) = ZoneRecording("r-$spot", spot, MODE_RESTING, 0, samples.toList())
 
@@ -22,6 +23,23 @@ class ZoneClassifierTest {
             Triple(s(), s(), 0.0),
         )
         for ((a, b, expected) in cases) assertEquals(expected, ZoneClassifier.wifiDistance(a.wifi, b.wifi), 1e-9, "$a vs $b")
+    }
+
+    @Test
+    fun homeNetworkCountsMoreAndHotspotsLess() {
+        fun r(b: String, rssi: Int, home: Boolean = false) = WifiReading(b, rssi, 2412, home)
+        val cases = listOf(
+            // home AP 8 dB off, neighbour AP equal: (4·8 + 1·0) / 5
+            Triple(listOf(r("a4:01", -50, home = true), r("a4:02", -60)), listOf(r("a4:01", -58), r("a4:02", -60)), 6.4),
+            // hotspot (locally administered 0x02 bit) only in one scan barely penalised: 20 · 0.25 / 1.25
+            Triple(listOf(r("a4:02", -60), r("02:ff", -50)), listOf(r("a4:02", -60)), 4.0),
+            // the same, but an ordinary AP: 20 · 1 / 2
+            Triple(listOf(r("a4:02", -60), r("a4:ff", -50)), listOf(r("a4:02", -60)), 10.0),
+        )
+        for ((a, b, expected) in cases) assertEquals(expected, ZoneClassifier.wifiDistance(a, b), 1e-9, "$a vs $b")
+        assertTrue(ZoneClassifier.isRandomised("02:00:00:00:00:01"))
+        assertTrue(ZoneClassifier.isRandomised("da:a1:19:00:00:01"))
+        assertFalse(ZoneClassifier.isRandomised("a4:2b:b0:00:00:01"))
     }
 
     @Test

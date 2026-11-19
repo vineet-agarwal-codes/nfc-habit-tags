@@ -20,8 +20,8 @@ class ZoneLabTest(unittest.TestCase):
         self.assertEqual(zone_lab.wifi_distance(a, a), 0)
         self.assertEqual(zone_lab.wifi_distance(a, [{"b": "a", "r": -60}]), 10)
         self.assertEqual(zone_lab.wifi_distance(a, [{"b": "c", "r": -50}]), 42)
-        self.assertAlmostEqual(zone_lab.wifi_distance([{"b": "a", "r": -50}, {"b": "b", "r": -70}],
-                                                      [{"b": "a", "r": -54}, {"b": "c", "r": -70}]), 4 + 20 * 2 / 3)
+        self.assertAlmostEqual(zone_lab.wifi_distance([{"b": "00:a", "r": -50}, {"b": "00:b", "r": -70}],
+                                                      [{"b": "00:a", "r": -54}, {"b": "00:c", "r": -70}]), 4 + 20 * 2 / 3)
         self.assertAlmostEqual(zone_lab.angle_degrees([0, 0, 1], [0, 1, 0]), 90)
 
     def test_separable_spots_score_high_and_report_prints(self):

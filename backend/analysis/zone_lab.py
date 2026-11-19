@@ -22,23 +22,40 @@ MAG_WEIGHT = 1.0
 ORIENT_WEIGHT = 0.1
 OVERLAP_PENALTY_DB = 20.0
 TEMPERATURE_DB = 3.0
+HOME_WEIGHT = 4.0
+RANDOMISED_WEIGHT = 0.25
 KNOWN_DB = 14.0
 UNKNOWN_DB = 22.0
 UNKNOWN_SPOT = "Unknown place"
 FEATURE_SETS = {"wifi": (False, False), "wifi+mag": (True, False), "wifi+mag+orient": (True, True)}
 
 
+def is_randomised(bssid):
+    try:
+        return int(bssid[:2], 16) & 0x02 != 0
+    except ValueError:
+        return False
+
+
+def _weight(bssid, home):
+    return HOME_WEIGHT if home else RANDOMISED_WEIGHT if is_randomised(bssid) else 1.0
+
+
 def wifi_distance(a, b):
-    """Mirrors ZoneClassifier.wifiDistance: mean |dBm| over shared APs + penalty for APs not in common."""
-    ra = {x["b"]: x["r"] for x in a}
-    rb = {x["b"]: x["r"] for x in b}
+    """Mirrors ZoneClassifier.wifiDistance: weighted mean |dBm| over shared APs + penalty for APs not in
+    common; the home network (h) weighs most, locally administered (likely hotspot) BSSIDs least."""
+    ra = {x["b"]: x for x in a}
+    rb = {x["b"]: x for x in b}
     union = set(ra) | set(rb)
     if not union:
         return 0.0
+    w = {k: _weight(k, ra.get(k, {}).get("h", False) or rb.get(k, {}).get("h", False)) for k in union}
     shared = set(ra) & set(rb)
     if not shared:
         return OVERLAP_PENALTY_DB + UNKNOWN_DB
-    return sum(abs(ra[k] - rb[k]) for k in shared) / len(shared) + OVERLAP_PENALTY_DB * (1 - len(shared) / len(union))
+    sw = sum(w[k] for k in shared)
+    diff = sum(w[k] * abs(ra[k]["r"] - rb[k]["r"]) for k in shared) / sw
+    return diff + OVERLAP_PENALTY_DB * (1 - sw / sum(w.values()))
 
 
 def angle_degrees(a, b):

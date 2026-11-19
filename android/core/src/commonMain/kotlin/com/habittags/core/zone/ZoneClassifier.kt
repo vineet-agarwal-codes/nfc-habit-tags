@@ -41,20 +41,39 @@ object ZoneClassifier {
     const val KNOWN_DB = 14.0
     const val UNKNOWN_DB = 22.0
 
+    /** The user's own Wi-Fi never moves, so it counts this many times an ordinary access point. */
+    const val HOME_WEIGHT = 4.0
     /**
-     * Mean absolute dBm difference over the access points both scans saw, plus [OVERLAP_PENALTY_DB] times
-     * the share of access points only one of them saw. Weak, flickering access points then can't dominate
-     * the way they do when a missing AP is scored as a fixed floor.
+     * BSSIDs with the locally-administered bit set are mostly phone hotspots and other randomised
+     * networks that move around, so they count for little.
+     */
+    const val RANDOMISED_WEIGHT = 0.25
+
+    fun isRandomised(bssid: String): Boolean =
+        bssid.take(2).toIntOrNull(16)?.let { it and 0x02 != 0 } ?: false
+
+    private fun weight(bssid: String, home: Boolean) = when {
+        home -> HOME_WEIGHT
+        isRandomised(bssid) -> RANDOMISED_WEIGHT
+        else -> 1.0
+    }
+
+    /**
+     * Weighted mean absolute dBm difference over the access points both scans saw, plus
+     * [OVERLAP_PENALTY_DB] times the weighted share of access points only one of them saw. Weak,
+     * flickering access points can't dominate; the home network counts most, likely hotspots least.
      */
     fun wifiDistance(a: List<WifiReading>, b: List<WifiReading>): Double {
-        val ra = a.associate { it.b to it.r }
-        val rb = b.associate { it.b to it.r }
+        val ra = a.associateBy { it.b }
+        val rb = b.associateBy { it.b }
         val union = ra.keys + rb.keys
         if (union.isEmpty()) return 0.0
+        val w = union.associateWith { weight(it, ra[it]?.h == true || rb[it]?.h == true) }
         val shared = ra.keys intersect rb.keys
-        val overlapPenalty = OVERLAP_PENALTY_DB * (1.0 - shared.size.toDouble() / union.size)
         if (shared.isEmpty()) return OVERLAP_PENALTY_DB + UNKNOWN_DB
-        return shared.sumOf { abs(ra.getValue(it) - rb.getValue(it)).toDouble() } / shared.size + overlapPenalty
+        val sharedWeight = shared.sumOf { w.getValue(it) }
+        val diff = shared.sumOf { w.getValue(it) * abs(ra.getValue(it).r - rb.getValue(it).r) } / sharedWeight
+        return diff + OVERLAP_PENALTY_DB * (1.0 - sharedWeight / union.sumOf { w.getValue(it) })
     }
 
     fun distance(a: ZoneSample, b: ZoneSample, features: FeatureSet): Double {
