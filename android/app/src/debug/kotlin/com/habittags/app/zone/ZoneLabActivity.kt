@@ -191,6 +191,7 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
         Button(enabled = ready && !busy && recordings.isNotEmpty(), onClick = {
             busy = true
             answered = false
+            observation = null
             scope.launch {
                 waiting = false
                 observation = ZoneLab.observe(context, "live", waitForFresh = true, onWaiting = { waiting = true })
@@ -199,6 +200,7 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
             }
         }) { Text("Where am I?") }
         if (recordings.isEmpty()) Text("Record at least one spot first.", style = MaterialTheme.typography.bodySmall)
+        if (busy && !waiting) Text("Checking where you are…", style = MaterialTheme.typography.bodyMedium)
         if (waiting) Text("Waiting for a fresh Wi-Fi scan — Android allows only a few per minute. Up to 2 minutes.", style = MaterialTheme.typography.bodySmall)
         if (!busy) observation?.let { obs ->
             val g = obs.guess
