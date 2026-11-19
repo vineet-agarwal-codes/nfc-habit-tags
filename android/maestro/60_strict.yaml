@@ -16,6 +16,8 @@ appId: app.mise
 - assertVisible: ".*strict for .* min"
 - takeScreenshot: strict
 - tapOn: "Desk is on"
+- scrollUntilVisible:
+    element: "Desk settings"
 - tapOn: "Desk settings"
 - scrollUntilVisible:
     element: "End Desk before removing it."

@@ -42,3 +42,10 @@ appId: app.mise
 - takeScreenshot: bed_started_anyway
 - back
 - openLink: "habittags-debug://expire-soon/app:bed-sleep"
+# Auto-off ends Bed and shows its morning checklist; close it so later flows start clean.
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible: "Good morning"
+    timeout: 150000
+- tapOn: "Done"

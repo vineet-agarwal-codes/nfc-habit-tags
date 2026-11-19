@@ -1,0 +1,7 @@
+appId: app.mise
+---
+# Ends on a screen that e2e.sh screen-captures for the store listing.
+- launchApp
+- extendedWaitUntil:
+    visible: "Shape your spaces"
+    timeout: 10000

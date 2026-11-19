@@ -1,0 +1,10 @@
+appId: app.mise
+---
+# Ends on a screen that e2e.sh screen-captures for the store listing.
+- launchApp:
+    stopApp: false
+- tapOn: "Home"
+- tapOn: "Desk is on"
+- extendedWaitUntil:
+    visible: "End early"
+    timeout: 5000

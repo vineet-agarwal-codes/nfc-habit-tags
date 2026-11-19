@@ -32,10 +32,9 @@ appId: app.mise
 - takeScreenshot: store_add_tag
 - tapOn: "Write to a tag"
 - extendedWaitUntil:
-    visible: "Hold your phone to a tag"
+    visible: "1 tag.*"
     timeout: 30000
 - assertVisible: "Desk"
-- assertVisible: "1 tag.*"
 - takeScreenshot: home_one_space
 - tapOn: "Desk"
 - scrollUntilVisible:

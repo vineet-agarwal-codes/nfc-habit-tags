@@ -9,8 +9,10 @@ appId: app.mise
 - scrollUntilVisible:
     element: "For workouts"
     centerElement: true
+- scrollUntilVisible:
+    element: ".*Used by 40 people this week · 100 installs"
+    centerElement: true
 - assertVisible: "Workout"
-- assertVisible: ".*Used by 40 people this week · 100 installs"
 - scrollUntilVisible:
     element: "For bedtime"
     centerElement: true

@@ -1,0 +1,12 @@
+appId: app.mise
+---
+# Ends on a screen that e2e.sh screen-captures for the store listing.
+- openLink: "habittags-debug://gate-words/5"
+- launchApp:
+    stopApp: false
+- tapOn: "Home"
+- tapOn: "End early"
+- extendedWaitUntil:
+    visible: "End Desk early?"
+    timeout: 5000
+- hideKeyboard

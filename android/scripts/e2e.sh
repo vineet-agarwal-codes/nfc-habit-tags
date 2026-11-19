@@ -35,6 +35,10 @@ overlay_visible() {
   [ "$(grep -m1 -o "isVisible=[a-z]*" "$OUT/overlay_window.txt")" = "isVisible=true" ]
 }
 
+# Store screenshots: Maestro's takeScreenshot files don't reach the report, so capture with adb.
+mkdir -p "$OUT/screenshots"
+shot() { sleep 1; adb exec-out screencap -p > "$OUT/screenshots/$1.png"; }
+
 zen() { adb shell settings get global zen_mode | tr -d '\r'; }
 
 adb logcat -c
@@ -56,6 +60,8 @@ debug_link() { adb shell am start -W -a android.intent.action.VIEW -d "habittags
 reports() { adb shell run-as $PKG cat files/debug_reports.jsonl > "$OUT/debug_reports.jsonl" 2>/dev/null; }
 
 # First launch offline: bundled recipes, no stats, and the report stays unsent.
+flow 04_shot_onboarding
+shot 1_onboarding
 flow 05_offline
 debug_link report-now
 reports && fail "a report was written while offline"
@@ -66,6 +72,11 @@ debug_link report-now
 reports || fail "pending report not sent once back online"
 flow 10_first_run
 flow 15_discover
+flow 16_shot_discover
+shot 3_discover
+flow 17_shot_recipe
+shot 4_recipe
+flow 18_back_home
 flow 20_tap_toggle
 
 debug_link report-now
@@ -78,10 +89,15 @@ node -e '
   process.exit(snap && taps ? 0 : 1);
 ' "$OUT/debug_reports.jsonl" || fail "usage report missing installed_snapshot or tap_count for desk-deep-work"
 flow 30_block
+shot 7_blocked
 overlay_visible || fail "overlay not visible over YouTube"
 adb shell dumpsys alarm > "$OUT/alarms_30.txt"
 grep -q "$PKG" "$OUT/alarms_30.txt" || fail "no auto-off alarm scheduled while a mode is active"
 [ "$(zen)" != "0" ] || fail "DND not on while desk mode active (zen_mode=$(zen))"
+flow 31_shot_running
+shot 6_running
+flow 32_shot_home_running
+shot 2_home_running
 
 adb reboot
 adb wait-for-device
@@ -100,6 +116,9 @@ sleep 10
 adb shell dumpsys activity services $PKG > "$OUT/services_after_update.txt"
 grep -q "BlockService" "$OUT/services_after_update.txt" || fail "BlockService not restored after app update"
 
+flow 49_shot_gate
+shot 8_end_early
+flow 49_back_home
 flow 50_gate
 flow 60_strict
 flow 70_autooff
@@ -123,10 +142,15 @@ flow 95_manual_start
 adb shell dumpsys activity services $PKG > "$OUT/services_after_manual.txt"
 grep -q "BlockService" "$OUT/services_after_manual.txt" && fail "BlockService still running after manual mode auto-off"
 flow 97_bed_hours
+flow 97_shot_home_spaces
+shot 5_home_spaces
 
 adb shell cmd uimode night yes
 sleep 2
-flow 98_dark
+flow 98_dark_home
+shot 9_dark_home
+flow 98_dark_discover
+shot 10_dark_discover
 adb shell cmd uimode night no
 sleep 2
 

@@ -1,0 +1,12 @@
+appId: app.mise
+---
+# Ends on a screen that e2e.sh screen-captures for the store listing.
+- launchApp:
+    stopApp: false
+- scrollUntilVisible:
+    element: "Workout"
+    centerElement: true
+- tapOn: "Workout"
+- extendedWaitUntil:
+    visible: "What it does"
+    timeout: 5000
