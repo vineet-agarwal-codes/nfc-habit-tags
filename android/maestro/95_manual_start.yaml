@@ -1,38 +1,38 @@
 appId: app.mise
 ---
-# Install Desk without a tag, start it from the app, check the gate, then let auto-off end it.
+# Add Desk without a tag, start it from the app, check the gate, then let auto-off end it.
 - launchApp:
     stopApp: false
 - tapOn: "Discover"
 - scrollUntilVisible:
-    element: "Desk: Deep Work"
+    element: "Deep Work"
     centerElement: true
-- tapOn: "Desk: Deep Work"
-- tapOn: "Install"
+- tapOn: "Deep Work"
+- tapOn: "Add to Desk"
 - scrollUntilVisible:
-    element: "Skip for now"
-- tapOn: "Skip for now"
+    element: "Next"
+- tapOn: "Next"
+- tapOn: "Skip, start it from the app"
+- extendedWaitUntil:
+    visible: "Start now"
+    timeout: 5000
 - tapOn: "Start now"
 - extendedWaitUntil:
-    visible: "On now"
+    visible: "Desk is on"
     timeout: 5000
 - assertNotVisible: "Start now"
 - takeScreenshot: manual_started
-# The edit screen has no bottom bar; back returns to the tabs.
-- back
-- tapOn: "My recipes"
-- assertVisible: "End now"
-- tapOn: "End now"
-- assertVisible: "End Desk: Deep Work early?"
+- tapOn: "End early"
+- assertVisible: "End Desk early?"
 # The gate opens with the keyboard up; the first back would only close it.
 - hideKeyboard
 - back
 - openLink: "habittags-debug://expire-soon/app:desk-deep-work"
 - launchApp:
     stopApp: false
-- tapOn: "My recipes"
+- tapOn: "Home"
 - extendedWaitUntil:
-    notVisible: "End now"
+    notVisible: "Desk is on"
     timeout: 150000
 - assertVisible: "Start now"
 - takeScreenshot: manual_after_autooff

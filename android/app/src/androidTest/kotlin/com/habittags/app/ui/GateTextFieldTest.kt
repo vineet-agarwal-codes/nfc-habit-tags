@@ -36,6 +36,7 @@ class GateTextFieldTest {
             AppState(
                 tags = mapOf(tagId to InstalledTag(tagId, "desk-deep-work", "Desk: Deep Work", mapOf("strictMinutes" to 60))),
                 active = mapOf(tagId to ActiveMode(tagId, "desk-deep-work", now, now + 3_600_000, now + 3_600_000, setOf("social"), false)),
+                onboarded = true,
             )
         }
     }

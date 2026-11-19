@@ -1,11 +1,21 @@
 appId: app.mise
 ---
+# First launch: the three onboarding screens, then Discover from the bundled (offline) catalog.
 - launchApp
 - extendedWaitUntil:
-    visible: "Discover"
+    visible: "Shape your spaces"
     timeout: 10000
-- assertVisible: "Desk: Deep Work"
-- assertVisible: "Bed: Sleep Mode"
-- assertNotVisible: "Used by.*"
-- assertNotVisible: "Plant: Water me"
+- takeScreenshot: onboarding_1
+- tapOn: "Next"
+- assertVisible: "Tags make it a tap"
+- tapOn: "Next"
+- assertVisible: "Set up your first space"
+- tapOn: "Browse recipes"
+- extendedWaitUntil:
+    visible: "Recipes"
+    timeout: 10000
+- assertVisible: "Deep Work"
+- assertVisible: "Showing saved recipes"
+- assertNotVisible: ".*Used by.*"
+- assertNotVisible: "Water me"
 - takeScreenshot: offline_discover

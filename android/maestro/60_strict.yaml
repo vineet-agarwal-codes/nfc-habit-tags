@@ -3,22 +3,23 @@ appId: app.mise
 - openLink: "habittags-debug://param/last/strictMinutes/45"
 - launchApp:
     stopApp: false
-- tapOn: "My recipes"
-- tapOn: "Desk: Deep Work"
-- assertVisible: "Can't turn off with the tag for: 45 min"
+- tapOn: "Home"
+- tapOn: "Desk"
+- scrollUntilVisible:
+    element: "Can't turn off with the tag for: 45 min"
 - back
 - openLink: "habittags-debug://tap/last"
 - openLink: "habittags-debug://tap/last"
 - launchApp:
     stopApp: false
-- assertVisible: "On now"
-- assertVisible: "Desk: Deep Work · strict, .* min left"
+- assertVisible: "Desk is on"
+- assertVisible: ".*strict for .* min"
 - takeScreenshot: strict
-- tapOn: "My recipes"
-- tapOn: "Desk: Deep Work"
+- tapOn: "Desk is on"
+- tapOn: "Desk settings"
 - scrollUntilVisible:
-    element: "Uninstall"
+    element: "End Desk before removing it."
     timeout: 40000
-- takeScreenshot: strict_edit
-- assertVisible: "Turn this mode off first"
+- takeScreenshot: strict_settings
+- back
 - back

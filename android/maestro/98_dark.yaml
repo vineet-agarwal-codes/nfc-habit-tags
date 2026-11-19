@@ -1,0 +1,9 @@
+appId: app.mise
+---
+# Dark mode screenshots of the main screens (store listing and design review).
+- launchApp:
+    stopApp: false
+- tapOn: "Home"
+- takeScreenshot: store_dark_home
+- tapOn: "Discover"
+- takeScreenshot: store_dark_discover

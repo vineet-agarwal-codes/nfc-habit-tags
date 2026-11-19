@@ -3,20 +3,21 @@ appId: app.mise
 - openLink: "habittags-debug://gate-words/5"
 - launchApp:
     stopApp: false
-- tapOn: "End now"
-- assertVisible: "End Desk: Deep Work early?"
+- tapOn: "Home"
+- tapOn: "End early"
+- assertVisible: "End Desk early?"
 - assertVisible: "0 of [0-9]+ words"
-- takeScreenshot: gate
+- takeScreenshot: store_gate
 - tapOn: "Start typing here…"
 - inputText: "#"
 - assertVisible: "Typo — press backspace and fix the highlighted letter."
 - takeScreenshot: gate_typo
 - eraseText: 1
-- back
+- hideKeyboard
 - back
 - openLink: "habittags-debug://tap/last"
 - launchApp:
     stopApp: false
 - extendedWaitUntil:
-    notVisible: "On now"
-    timeout: 5000
+    notVisible: "Desk is on"
+    timeout: 8000

@@ -2,12 +2,12 @@ appId: app.mise
 ---
 - launchApp:
     stopApp: false
-- tapOn: "My recipes"
-- tapOn: "Desk: Deep Work"
+- tapOn: "Home"
+- tapOn: "Desk"
 - scrollUntilVisible:
-    element: "Uninstall"
-- tapOn: "Uninstall"
+    element: "Remove Desk"
+- tapOn: "Remove Desk"
 - tapOn: "Discover"
 - scrollUntilVisible:
-    element: "Desk: Deep Work"
+    element: "Deep Work"
 - takeScreenshot: after_uninstall

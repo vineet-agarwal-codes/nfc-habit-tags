@@ -2,13 +2,23 @@ appId: app.mise
 ---
 - launchApp:
     stopApp: false
+- tapOn: "Home"
 - openLink: "habittags-debug://tap/last"
+- launchApp:
+    stopApp: false
 - extendedWaitUntil:
-    visible: "On now"
+    visible: "Desk is on"
     timeout: 10000
+- tapOn: "Desk is on"
+- extendedWaitUntil:
+    visible: "End early"
+    timeout: 5000
+- takeScreenshot: store_running
+- back
 - launchApp:
     appId: com.google.android.youtube
 - extendedWaitUntil:
     visible: "Go to home screen"
     timeout: 10000
-- takeScreenshot: blocked
+- assertVisible: "Desk is on"
+- takeScreenshot: store_blocked

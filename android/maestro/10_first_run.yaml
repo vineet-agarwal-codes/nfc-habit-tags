@@ -1,14 +1,20 @@
 appId: app.mise
 ---
+# Add Desk: recipe page, settings with an extra app, permissions already granted, write the tag.
 - launchApp:
     stopApp: false
+- tapOn: "Discover"
 - extendedWaitUntil:
-    visible: "Plant: Water me"
+    visible: "Water me"
     timeout: 10000
 - scrollUntilVisible:
-    element: "Desk: Deep Work"
-- tapOn: "Desk: Deep Work"
-- tapOn: "Install"
+    element: "Deep Work"
+    centerElement: true
+- tapOn: "Deep Work"
+- assertVisible: "What it does"
+- takeScreenshot: store_recipe
+- tapOn: "Add to Desk"
+- assertVisible: "Set up Desk"
 - scrollUntilVisible:
     element: "Add app"
 - tapOn:
@@ -18,16 +24,21 @@ appId: app.mise
     element: "Contacts"
 - tapOn: "Contacts"
 - scrollUntilVisible:
-    element: "Write to a tag"
+    element: "Next"
+- tapOn: "Next"
+- assertVisible: "Write the tag"
+- takeScreenshot: store_add_tag
 - tapOn: "Write to a tag"
-- scrollUntilVisible:
-    element: "1 tag"
+- extendedWaitUntil:
+    visible: "Hold your phone to a tag"
     timeout: 30000
+- assertVisible: "Desk"
+- assertVisible: "1 tag.*"
+- takeScreenshot: home_one_space
+- tapOn: "Desk"
 - scrollUntilVisible:
-    element: "Uninstall"
-- takeScreenshot: first_run_edit
+    element: "Remove Desk"
+- takeScreenshot: first_run_space_settings
 - back
-- tapOn: "My recipes"
-- assertVisible: "Desk: Deep Work"
 - tapOn: "Discover"
-- assertNotVisible: "Desk: Deep Work"
+- assertNotVisible: "Deep Work"

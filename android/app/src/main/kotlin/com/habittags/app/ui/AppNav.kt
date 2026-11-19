@@ -118,7 +118,7 @@ fun AppNav(activity: MainActivity) {
                 }
                 composable("running/{modeKey}") { entry ->
                     val key = entry.arguments!!.getString("modeKey")!!
-                    RunningScreen(key, onEndEarly = { nav.navigate("gate/$key") }, onClose = { nav.popBackStack() })
+                    RunningScreen(key, onEndEarly = { nav.navigate("gate/$key") }, onOpenSettings = { nav.navigate("space/$it") }, onClose = { nav.popBackStack() })
                 }
                 composable("setup/{tagId}") { entry ->
                     val tagId = entry.arguments!!.getString("tagId")!!

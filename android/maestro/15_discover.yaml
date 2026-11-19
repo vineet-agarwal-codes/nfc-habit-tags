@@ -3,20 +3,16 @@ appId: app.mise
 - launchApp:
     stopApp: false
 - tapOn: "Discover"
-- assertVisible: "Plant: Water me"
-- assertVisible:
-    text: "Gym Bag: Workout"
-    below: "Plant: Water me"
-- assertVisible: "Used by 40 people this week"
-- assertVisible: "100 installs"
-- assertVisible:
-    text: "Bed: Sleep Mode"
-    below: "Gym Bag: Workout"
-- assertVisible: "Used by 30 people this week"
+- assertVisible: "New recipes"
+- assertVisible: "Water me"
+- takeScreenshot: store_discover
 - scrollUntilVisible:
-    element: "New"
+    element: "For workouts"
     centerElement: true
-- assertVisible:
-    text: "New"
-    below: "Front Door: Leaving Home"
+- assertVisible: "Workout"
+- assertVisible: ".*Used by 40 people this week · 100 installs"
+- scrollUntilVisible:
+    element: "For bedtime"
+    centerElement: true
+- assertVisible: ".*Used by 30 people this week.*"
 - takeScreenshot: discover

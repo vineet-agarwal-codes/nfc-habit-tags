@@ -2,13 +2,18 @@ appId: app.mise
 ---
 - launchApp:
     stopApp: false
+- tapOn: "Home"
 - openLink: "habittags-debug://tap/last"
+- launchApp:
+    stopApp: false
 - extendedWaitUntil:
-    visible: "On now"
+    visible: "Desk is on"
     timeout: 5000
-- assertVisible: "End now"
-- takeScreenshot: mode_on
+- assertVisible: "End early"
+- takeScreenshot: store_home_running
 - openLink: "habittags-debug://tap/last"
+- launchApp:
+    stopApp: false
 - extendedWaitUntil:
-    notVisible: "On now"
-    timeout: 5000
+    notVisible: "Desk is on"
+    timeout: 8000

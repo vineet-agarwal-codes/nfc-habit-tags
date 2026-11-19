@@ -124,6 +124,12 @@ adb shell dumpsys activity services $PKG > "$OUT/services_after_manual.txt"
 grep -q "BlockService" "$OUT/services_after_manual.txt" && fail "BlockService still running after manual mode auto-off"
 flow 97_bed_hours
 
+adb shell cmd uimode night yes
+sleep 2
+flow 98_dark
+adb shell cmd uimode night no
+sleep 2
+
 # Zone lab (debug-only) with the fake Wi-Fi scanner; its uploads go to the fixture backend.
 flow 99_zone_lab
 sleep 3

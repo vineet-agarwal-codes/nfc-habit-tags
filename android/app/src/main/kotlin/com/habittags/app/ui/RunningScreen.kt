@@ -35,7 +35,7 @@ import com.habittags.app.ui.components.rememberNow
 
 /** A space that's on, full screen in its colour: name, a large countdown, what's paused, End early. */
 @Composable
-fun RunningScreen(modeKey: String, onEndEarly: () -> Unit, onClose: () -> Unit) {
+fun RunningScreen(modeKey: String, onEndEarly: () -> Unit, onOpenSettings: (String) -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
     val app = context.app()
     val state by app.state.collectAsState()
@@ -88,5 +88,6 @@ fun RunningScreen(modeKey: String, onEndEarly: () -> Unit, onClose: () -> Unit) 
         Spacer(Modifier.height(32.dp))
         Text("Tap the tag again to end it, or end it early here.", style = MaterialTheme.typography.bodyMedium, color = onField)
         PrimaryButton("End early", onEndEarly, Modifier.fillMaxWidth(), container = onField, content = field)
+        com.habittags.app.ui.components.QuietButton("${app.spaceName(mode.recipeId)} settings", { onOpenSettings(mode.recipeId) }, color = onField)
     }
 }

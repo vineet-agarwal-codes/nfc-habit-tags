@@ -2,5 +2,6 @@ appId: app.mise
 ---
 - launchApp:
     stopApp: false
-- assertNotVisible: "On now"
+- tapOn: "Home"
+- assertNotVisible: "Desk is on"
 - takeScreenshot: after_autooff
