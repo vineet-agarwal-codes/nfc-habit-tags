@@ -44,7 +44,11 @@ fun AppNav(activity: MainActivity) {
     val app = LocalContext.current.app()
     val state by app.state.collectAsState()
     if (!state.onboarded) {
-        OnboardingScreen(onDone = { app.update { it.copy(onboarded = true) }; activity.pending.value = activity.pending.value ?: android.content.Intent().putExtra(OPEN_DISCOVER, true) })
+        OnboardingScreen(onDone = {
+            // Keep whatever opened the app (a tag to set up, a checklist) and also land on Discover.
+            activity.pending.value = android.content.Intent(activity.pending.value ?: android.content.Intent()).putExtra(OPEN_DISCOVER, true)
+            app.update { it.copy(onboarded = true) }
+        })
         return
     }
     val nav = rememberNavController()
