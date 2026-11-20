@@ -41,6 +41,8 @@ shot() { sleep 1; adb exec-out screencap -p > "$OUT/screenshots/$1.png"; }
 
 zen() { adb shell settings get global zen_mode | tr -d '\r'; }
 
+# Phone density on the 1080x2160 skin, so layouts and store screenshots look like a real phone.
+adb shell wm density 420
 adb logcat -c
 adb install -r -g app/build/outputs/apk/debug/app-debug.apk
 adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
