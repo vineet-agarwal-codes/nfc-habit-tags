@@ -18,13 +18,14 @@ appId: app.mise
 - tapOn: "Add to Desk"
 - assertVisible: "Set up Desk"
 - scrollUntilVisible:
-    element: "Add app"
+    element: "Add apps"
 - tapOn:
-    text: "Add app"
+    text: "Add apps"
     index: 0
-- scrollUntilVisible:
-    element: "Contacts"
+- tapOn: "Search your apps"
+- inputText: "Contacts"
 - tapOn: "Contacts"
+- tapOn: "Save"
 - scrollUntilVisible:
     element: "Next"
 - tapOn: "Next"
