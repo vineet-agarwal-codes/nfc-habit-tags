@@ -86,7 +86,11 @@ fun RunningScreen(modeKey: String, onEndEarly: () -> Unit, onOpenSettings: (Stri
         if (mode.dnd) Text("Do Not Disturb is on", style = MaterialTheme.typography.bodyMedium, color = onField)
         if (mode.reaches > 0) Text(reachText(mode.reaches), style = MaterialTheme.typography.bodyLarge, color = onField)
         Spacer(Modifier.height(32.dp))
-        Text("Tap the tag again to end it, or end it early here.", style = MaterialTheme.typography.bodyMedium, color = onField)
+        Text(
+            if (recipe?.tagCanEnd == false) "It ends on its own at that time. To stop sooner, end it early here."
+            else "Tap the tag again to end it, or end it early here.",
+            style = MaterialTheme.typography.bodyMedium, color = onField,
+        )
         PrimaryButton("End early", onEndEarly, Modifier.fillMaxWidth(), container = onField, content = field)
         com.habittags.app.ui.components.QuietButton("${app.spaceName(mode.recipeId)} settings", { onOpenSettings(mode.recipeId) }, color = onField)
     }

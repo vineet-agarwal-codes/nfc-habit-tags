@@ -21,8 +21,9 @@ class RecipeValidationTest {
         actions: String = """[{"type":"dnd"},{"type":"timer","minutes":"{{autoOff}}"}]""",
         endActions: String = "[]",
         schemaVersion: Int = 1,
+        endPolicy: String = "null",
     ) = """{"id":"r","schemaVersion":$schemaVersion,"version":1,"title":"R","description":"d","placementHint":"p","mode":"toggle",
-        "params":$params,"autoOffMinutes":$autoOff,"rules":[{"when":{"time":"$whenTime"},"actions":$actions}],"endActions":$endActions}"""
+        "params":$params,"autoOffMinutes":$autoOff,"endPolicy":$endPolicy,"rules":[{"when":{"time":"$whenTime"},"actions":$actions}],"endActions":$endActions}"""
 
     private fun recipe(json: String) = CatalogJson.decodeFromString(Recipe.serializer(), json)
 
@@ -39,6 +40,14 @@ class RecipeValidationTest {
             "bad time window" to (doc(whenTime = "25:00-06:00") to false),
             "unsupported action stays valid (shown as unusable)" to (doc(actions = """[{"type":"flashlight"}]""") to true),
             "newer schema is not checked" to (doc(whenTime = "later", schemaVersion = 99) to true),
+            "offset window" to (doc(params = TIME_PARAMS, autoOff = "90", whenTime = "{{from-180}}-{{to}}", actions = DND, schemaVersion = 3) to true),
+            "unknown key in an offset window" to (doc(params = TIME_PARAMS, autoOff = "90", whenTime = "{{nope-180}}-{{to}}", actions = DND, schemaVersion = 3) to false),
+            "wake end policy" to (doc(params = TIME_PARAMS, autoOff = "null", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 3,
+                endPolicy = """{"type":"wake","wakeAt":"{{to}}","usual":"{{from}}","latest":"{{to}}"}""") to true),
+            "end policy with an unknown param" to (doc(params = TIME_PARAMS, autoOff = "null", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 3,
+                endPolicy = """{"type":"wake","wakeAt":"{{nope}}","usual":"{{from}}","latest":"{{to}}"}""") to false),
+            "unknown end policy" to (doc(params = TIME_PARAMS, autoOff = "null", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 3,
+                endPolicy = """{"type":"moon","wakeAt":"{{to}}","usual":"{{from}}","latest":"{{to}}"}""") to false),
             "time params in a window" to (doc(params = TIME_PARAMS, autoOff = "90", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 2) to true),
             "unknown time placeholder in a window" to (doc(params = TIME_PARAMS, autoOff = "90", whenTime = "{{from}}-{{nope}}", actions = DND, schemaVersion = 2) to false),
             "time param past 23:59" to (doc(params = TIME_PARAMS.replace("\"max\":1439", "\"max\":1440"), autoOff = "90", whenTime = "{{from}}-{{to}}", actions = DND, schemaVersion = 2) to false),

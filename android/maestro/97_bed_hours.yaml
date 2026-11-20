@@ -8,13 +8,14 @@ appId: app.mise
     element: "Sleep Mode"
     centerElement: true
 - tapOn: "Sleep Mode"
-- assertVisible: "Turns on between 21:00 and 05:00"
+- assertVisible: "Turns on from 20:00 · ends by 05:00 \\(up to 08:00 if you sleep late\\)"
 - scrollUntilVisible:
     element: "Add to Bed"
 - tapOn: "Add to Bed"
-- assertVisible: "Sleep mode can start from: 21:00"
-- assertVisible: "until: 05:00"
-- tapOn: "Sleep mode can start from: 21:00"
+- assertVisible: "Usual bedtime: 23:00"
+- assertVisible: "Wake up at: 05:00"
+- assertVisible: "Latest wake-up: 08:00"
+- tapOn: "Usual bedtime: 23:00"
 - assertVisible: "Cancel"
 - takeScreenshot: bed_time_picker
 - tapOn: "Cancel"
@@ -22,16 +23,16 @@ appId: app.mise
     element: "Next"
 - tapOn: "Next"
 - tapOn: "Skip, start it from the app"
-# A one-minute window just after midnight, so "now" is outside it (except for that one minute).
-- openLink: "habittags-debug://param/app:bed-sleep/sleepStart/0"
-- openLink: "habittags-debug://param/app:bed-sleep/sleepEnd/1"
+# A one-minute window just after midnight (usual bedtime 03:00 − 3 h = 00:00, wake 00:01), so "now" is outside it.
+- openLink: "habittags-debug://param/app:bed-sleep/usualBedtime/180"
+- openLink: "habittags-debug://param/app:bed-sleep/wakeAt/1"
 - launchApp:
     stopApp: false
 - tapOn: "Home"
 - assertVisible: "From 00:00"
 - takeScreenshot: store_home_spaces
 - tapOn: "Bed"
-- assertVisible: "Turns on between 00:00 and 00:01"
+- assertVisible: "Turns on from 00:00 · ends by 00:01.*"
 - tapOn: "Start now"
 - assertVisible: "Outside its usual hours"
 - takeScreenshot: bed_outside_hours

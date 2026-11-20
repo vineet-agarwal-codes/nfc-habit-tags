@@ -1,5 +1,14 @@
 appId: app.mise
 ---
+# Start Desk again, then let it end on its own a minute from now.
+- launchApp:
+    stopApp: false
+- openLink: "habittags-debug://tap/last"
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible: "Desk is on"
+    timeout: 8000
 - openLink: "habittags-debug://expire-soon/last"
 - pressKey: Home
 - waitForAnimationToEnd:

@@ -3,10 +3,10 @@
     "id": "desk-deep-work",
     "doc": {
       "id": "desk-deep-work",
-      "schemaVersion": 1,
-      "version": 1,
+      "schemaVersion": 3,
+      "version": 2,
       "title": "Desk: Deep Work",
-      "description": "Tap when you sit down to work. Social media and video apps are blocked and notifications go quiet until you tap again or the timer ends.",
+      "description": "Tap when you sit down to work. Social media and video apps are blocked and notifications go quiet until the timer ends. Tapping again won't stop it; End early in the app will.",
       "placementHint": "Stick it on your desk where your phone rests, or under the desk edge.",
       "mode": "toggle",
       "params": [
@@ -17,18 +17,9 @@
           "default": 90,
           "min": 15,
           "max": 480
-        },
-        {
-          "key": "strictMinutes",
-          "type": "duration",
-          "label": "Can't turn off with the tag for",
-          "default": 0,
-          "min": 0,
-          "max": 240
         }
       ],
       "autoOffMinutes": "{{autoOffMinutes}}",
-      "strictMinutes": "{{strictMinutes}}",
       "rules": [
         {
           "actions": [
@@ -49,7 +40,8 @@
         "name": "Desk",
         "colour": "tomato"
       },
-      "place": "desk"
+      "place": "desk",
+      "tagCanEnd": false
     },
     "published_at": "2026-11-01T00:00:00+00:00",
     "sort_hint": 0
@@ -58,52 +50,43 @@
     "id": "bed-sleep",
     "doc": {
       "id": "bed-sleep",
-      "schemaVersion": 2,
-      "version": 2,
+      "schemaVersion": 3,
+      "version": 3,
       "title": "Bed: Sleep Mode",
-      "description": "Tap at night to block distracting apps and silence notifications. Tap again in the morning to end sleep mode and start your morning routine.",
+      "description": "Tap at bedtime to block distracting apps and silence notifications. Sleep mode ends at your wake-up time, or later if you went to bed late, and starts your morning routine.",
       "placementHint": "Stick it on your bedside table where your phone stays overnight.",
       "mode": "toggle",
       "params": [
         {
-          "key": "autoOffMinutes",
-          "type": "duration",
-          "label": "Wake up mode starts after",
-          "default": 480,
-          "min": 240,
-          "max": 720
-        },
-        {
-          "key": "sleepStart",
+          "key": "usualBedtime",
           "type": "time",
-          "label": "Sleep mode can start from",
-          "default": 1260,
+          "label": "Usual bedtime",
+          "default": 1380,
           "min": 0,
           "max": 1439
         },
         {
-          "key": "sleepEnd",
+          "key": "wakeAt",
           "type": "time",
-          "label": "until",
+          "label": "Wake up at",
           "default": 300,
           "min": 0,
-          "max": 1439
+          "max": 1439,
+          "renamedFrom": "sleepEnd"
         },
         {
-          "key": "strictMinutes",
-          "type": "duration",
-          "label": "Can't turn off with the tag for",
-          "default": 0,
+          "key": "latestWake",
+          "type": "time",
+          "label": "Latest wake-up",
+          "default": 480,
           "min": 0,
-          "max": 480
+          "max": 1439
         }
       ],
-      "autoOffMinutes": "{{autoOffMinutes}}",
-      "strictMinutes": "{{strictMinutes}}",
       "rules": [
         {
           "when": {
-            "time": "{{sleepStart}}-{{sleepEnd}}"
+            "time": "{{usualBedtime-180}}-{{wakeAt}}"
           },
           "actions": [
             {
@@ -143,7 +126,14 @@
         "name": "Bed",
         "colour": "deep_blue"
       },
-      "place": "bed"
+      "place": "bed",
+      "tagCanEnd": false,
+      "endPolicy": {
+        "type": "wake",
+        "wakeAt": "{{wakeAt}}",
+        "usual": "{{usualBedtime}}",
+        "latest": "{{latestWake}}"
+      }
     },
     "published_at": "2026-11-01T00:00:00+00:00",
     "sort_hint": 10

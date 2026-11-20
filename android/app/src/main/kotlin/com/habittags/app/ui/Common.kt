@@ -41,6 +41,7 @@ import com.habittags.core.recipe.BlockGroups
 import com.habittags.core.recipe.Dnd
 import com.habittags.core.recipe.ParamSpec
 import com.habittags.core.recipe.Recipe
+import com.habittags.core.recipe.bindInt
 import kotlin.math.roundToInt
 import com.habittags.core.rules.formatMinutes as formatTimeOfDay
 
@@ -66,11 +67,23 @@ fun rememberResumeTick(): Int {
     return tick
 }
 
-/** "Turns on between 21:00 and 05:00" for recipes with time windows, using the user's times; null otherwise. */
-fun hoursText(recipe: Recipe, userValues: Map<String, Int>): String? =
-    runCatching { ModeEngine.modeWindows(recipe, userValues) }.getOrNull()
-        ?.takeIf { it.isNotEmpty() && recipe.mode == Mode.toggle }
-        ?.let { "Turns on ${TapHandler.describeWindows(it)}" }
+/**
+ * "Turns on between 21:00 and 05:00" for recipes with time windows, using the user's times; with a
+ * wake-up end: "Turns on from 20:00 · ends by 05:00 (up to 08:00 if you sleep late)"; null otherwise.
+ */
+fun hoursText(recipe: Recipe, userValues: Map<String, Int>): String? = runCatching {
+    val windows = ModeEngine.modeWindows(recipe, userValues).takeIf { it.isNotEmpty() && recipe.mode == Mode.toggle }
+    val policy = recipe.endPolicy
+    when {
+        windows == null -> null
+        policy != null && windows.size == 1 -> {
+            val wake = formatTimeOfDay(bindInt(policy.wakeAt, recipe.params, userValues)!!)
+            val latest = formatTimeOfDay(bindInt(policy.latest, recipe.params, userValues)!!)
+            "Turns on from ${windows.single().substringBefore('-')} · ends by $wake (up to $latest if you sleep late)"
+        }
+        else -> "Turns on ${TapHandler.describeWindows(windows)}"
+    }
+}.getOrNull()
 
 /** A time param (minutes since midnight) as a tappable row that opens a time picker; other params as sliders. */
 @Composable

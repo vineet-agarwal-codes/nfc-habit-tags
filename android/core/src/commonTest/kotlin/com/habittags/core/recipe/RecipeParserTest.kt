@@ -49,7 +49,7 @@ class RecipeParserTest {
 
     @Test
     fun newerSchemaIsUnusable() {
-        val recipe = parseCatalog(FIXTURE.replace("\"schemaVersion\": 1", "\"schemaVersion\": 3")).recipes.single()
+        val recipe = parseCatalog(FIXTURE.replace("\"schemaVersion\": 1", "\"schemaVersion\": 4")).recipes.single()
         assertFalse(isUsable(recipe))
     }
 

@@ -3,6 +3,7 @@ package com.habittags.core.mode
 import com.habittags.core.recipe.Action
 import com.habittags.core.recipe.BlockGroups
 import com.habittags.core.recipe.Dnd
+import com.habittags.core.recipe.EndPolicy
 import com.habittags.core.recipe.Mode
 import com.habittags.core.recipe.Recipe
 import com.habittags.core.recipe.bindInt
@@ -12,6 +13,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlin.time.Duration.Companion.minutes
 
 @Serializable
 data class InstalledTag(val tagId: String, val recipeId: String, val label: String, val params: Map<String, Int>)
@@ -42,6 +49,9 @@ sealed interface TapResult {
 
     /** A toggle recipe tapped outside the time windows in which it turns on; `windows` are those "HH:MM-HH:MM" ranges. */
     data class OutsideHours(val windows: List<String>, val effects: List<Action>) : TapResult
+
+    /** The recipe's tag can't end it ([Recipe.tagCanEnd] false); it ends at [endsAt] or through End early. */
+    data class TagCantEnd(val endsAt: Long?) : TapResult
 }
 
 private const val MINUTE_MS = 60_000L
@@ -73,6 +83,7 @@ object ModeEngine {
         val key = modeKey(active, tag, nowMs)
         val current = active[key]?.takeIf { it.isLive(nowMs) }
         if (recipe.mode == Mode.toggle && current != null) {
+            if (!recipe.tagCanEnd) return TapResult.TagCantEnd(current.autoOffAt)
             val strictUntil = current.strictUntil
             if (strictUntil != null && nowMs < strictUntil) return TapResult.StrictRefused(strictUntil - nowMs)
             return TapResult.Ended(active - key, recipe.endActions)
@@ -99,7 +110,8 @@ object ModeEngine {
             tagId = tag.tagId,
             recipeId = recipe.id,
             startedAt = nowMs,
-            autoOffAt = autoOff?.let { nowMs + it * MINUTE_MS },
+            autoOffAt = recipe.endPolicy?.let { wakeEnd(now, timeZone, it, recipe, tag.params).toEpochMilliseconds() }
+                ?: autoOff?.let { nowMs + it * MINUTE_MS },
             strictUntil = strict?.let { nowMs + it * MINUTE_MS },
             blockedGroups = blockedGroups,
             dnd = actions.any { it is Dnd },
@@ -133,6 +145,28 @@ object ModeEngine {
     fun modeWindows(recipe: Recipe, userValues: Map<String, Int>): List<String> =
         recipe.rules.filter { r -> r.actions.any { it.keepsOn() } }
             .mapNotNull { r -> r.`when`?.let { resolveWindow(it.time, recipe.params, userValues) } }
+
+    /**
+     * "wake" end policy: the next wake-up time after [start]; if that leaves less than the usual sleep
+     * (usual bedtime → wake-up), start + the usual sleep instead, but never after that morning's latest
+     * wake-up. Local times are turned into instants in [zone], so DST nights come out right.
+     */
+    fun wakeEnd(start: Instant, zone: TimeZone, policy: EndPolicy, recipe: Recipe, userValues: Map<String, Int>): Instant {
+        fun minutes(v: kotlinx.serialization.json.JsonElement) = bindInt(v, recipe.params, userValues)!!
+        val wakeAt = minutes(policy.wakeAt)
+        val usual = minutes(policy.usual)
+        val latest = minutes(policy.latest)
+        val startLocal = start.toLocalDateTime(zone)
+        val startMin = startLocal.hour * 60 + startLocal.minute
+        val wakeDate = if (startMin < wakeAt) startLocal.date else startLocal.date.plus(1, DateTimeUnit.DAY)
+        val wake = LocalDateTime(wakeDate, LocalTime(wakeAt / 60, wakeAt % 60)).toInstant(zone)
+        val usualSleep = ((wakeAt - usual) % 1440 + 1440) % 1440
+        val sleepLength = if (usualSleep == 0) 1440 else usualSleep
+        if (wake - start >= sleepLength.minutes) return wake
+        val latestDate = if (latest >= wakeAt) wakeDate else wakeDate.plus(1, DateTimeUnit.DAY)
+        val latestAt = LocalDateTime(latestDate, LocalTime(latest / 60, latest % 60)).toInstant(zone)
+        return minOf(start + sleepLength.minutes, latestAt)
+    }
 
     private fun Action.keepsOn() = this is BlockGroups || this is Dnd
 

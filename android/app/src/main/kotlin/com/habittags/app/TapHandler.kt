@@ -7,6 +7,8 @@ import com.habittags.app.block.BlockController
 import com.habittags.app.block.ModeExpiry
 import com.habittags.app.effects.EffectRunner
 import com.habittags.app.ui.MainActivity
+import com.habittags.app.ui.OutsideHoursActivity
+import com.habittags.core.app.AppEngine
 import com.habittags.core.mode.InstalledTag
 import com.habittags.core.mode.ModeEngine
 import com.habittags.core.mode.TapResult
@@ -84,9 +86,11 @@ object TapHandler {
             }
             is TapResult.OutsideHours -> {
                 EffectRunner.run(context, result.effects, recipe, tag.params)
-                // Start now shows this in a dialog instead (see StartNowButton).
-                if (source == "app") null else outsideHoursMessage(title, result.windows)
+                // Start now shows its own dialog (StartNowButton); a tag tap opens one over the current screen.
+                if (source != "app") OutsideHoursActivity.open(context, tag.recipeId, title, result.windows)
+                null
             }
+            is TapResult.TagCantEnd -> AppEngine.tagCantEndMessage(title, result.endsAt?.let(::formatTime))
         }
         BlockController.sync(context)
         message?.let { Toast.makeText(context.applicationContext, it, Toast.LENGTH_LONG).show() }
@@ -98,8 +102,9 @@ object TapHandler {
 
     fun nowHhMm(): String = DateTimeFormatter.ofPattern("HH:mm").format(java.time.LocalTime.now())
 
-    fun outsideHoursMessage(title: String, windows: List<String>): String =
-        "$title only turns on ${describeWindows(windows)}. It's ${nowHhMm()} now, so nothing was started."
+    /** "starts from 20:00" for one window, else "turns on between … or …". */
+    fun startsText(windows: List<String>): String =
+        windows.singleOrNull()?.let { "starts from ${it.substringBefore('-')}" } ?: "turns on ${describeWindows(windows)}"
 
     fun minutesLeft(ms: Long): Long = (ms + 59_999) / 60_000
 

@@ -274,6 +274,7 @@ class AppEngine(stateJson: String?, bundledCatalogJson: String, cachedSnapshotJs
                 outcome("ended", "$title off", result.effects)
             }
             is TapResult.StrictRefused -> outcome("strictRefused", "Strict mode: ${minutesLeft(result.remainingMs)} min left")
+            is TapResult.TagCantEnd -> outcome("tagCantEnd", tagCantEndMessage(title, result.endsAt?.let { clock(it, tzId) }))
             is TapResult.Ran -> outcome("ran", title, result.effects)
             is TapResult.OutsideHours -> {
                 val windows = describeWindows(result.windows)
@@ -345,6 +346,10 @@ class AppEngine(stateJson: String?, bundledCatalogJson: String, cachedSnapshotJs
 
         /** False for a state file that exists but can't be read; the platform moves it aside instead of overwriting it. */
         fun isReadableState(text: String): Boolean = StateCodec.decodeOrNull(text) != null
+
+        /** "Desk is on until 11:30. To stop early, use End early in the app." */
+        fun tagCantEndMessage(title: String, endsAt: String?): String =
+            (if (endsAt != null) "$title is on until $endsAt." else "$title is on.") + " To stop early, use End early in the app."
 
         fun describeWindows(windows: List<String>): String =
             windows.joinToString(" or ") { w -> w.split("-").let { "between ${it[0]} and ${it[1]}" } }

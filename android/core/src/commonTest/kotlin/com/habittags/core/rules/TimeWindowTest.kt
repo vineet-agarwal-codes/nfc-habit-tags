@@ -54,6 +54,10 @@ class TimeWindowTest {
             Triple("{{sleepStart}}-06:30", mapOf("sleepStart" to 0), "00:00-06:30"),
             Triple("{{sleepStart}}-{{sleepEnd}}", mapOf("sleepStart" to 5000, "sleepEnd" to -3), "23:59-00:00"),
             Triple("22:00-06:00", mapOf("sleepStart" to 0), "22:00-06:00"),
+            // offsets in minutes, wrapping around midnight
+            Triple("{{sleepStart-180}}-{{sleepEnd}}", emptyMap<String, Int>(), "18:00-05:00"),
+            Triple("{{sleepStart-180}}-{{sleepEnd+30}}", mapOf("sleepStart" to 60), "22:00-05:30"),
+            Triple("{{sleepStart+120}}-{{sleepEnd}}", mapOf("sleepStart" to 1380), "01:00-05:00"),
         )
         for ((window, values, expected) in cases) assertEquals(expected, resolveWindow(window, timeSpecs, values), "$window $values")
     }

@@ -17,4 +17,16 @@ class ParamMergeTest {
         )
         for ((user, specs, expected) in cases) assertEquals(expected, mergeParams(user, specs), "case $user")
     }
+
+    @Test
+    fun renamedParamKeepsTheOldValue() {
+        val wake = ParamSpec("wakeAt", "time", "Wake up at", 300, 0, 1439, renamedFrom = "sleepEnd")
+        val cases = listOf(
+            // user values, expected
+            mapOf("sleepEnd" to 420, "sleepStart" to 1260) to mapOf("wakeAt" to 420),
+            mapOf("sleepEnd" to 420, "wakeAt" to 360) to mapOf("wakeAt" to 360), // a value under the new key wins
+            emptyMap<String, Int>() to emptyMap(),
+        )
+        for ((user, expected) in cases) assertEquals(expected, mergeParams(user, listOf(wake)), "case $user")
+    }
 }

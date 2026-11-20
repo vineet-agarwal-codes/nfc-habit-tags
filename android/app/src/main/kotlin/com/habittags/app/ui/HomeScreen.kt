@@ -8,10 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -115,22 +113,14 @@ fun StartNowButton(recipe: Recipe, enabled: Boolean = true, onNeedsPermissions: 
         content = androidx.compose.ui.graphics.Color(colour.onField.toInt()),
     )
     outside?.let { result ->
-        AlertDialog(
-            onDismissRequest = { outside = null },
-            title = { Text("Outside its usual hours") },
-            text = {
-                Text(
-                    "${app.spaceName(recipe.id)} normally turns on ${TapHandler.describeWindows(result.windows)}. " +
-                        "It's ${TapHandler.nowHhMm()} now. Start it anyway?",
-                )
+        OutsideHoursDialog(
+            app.spaceName(recipe.id), result.windows,
+            onStart = {
+                outside = null
+                TapHandler.startManually(context, recipe.id, force = true)
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    outside = null
-                    TapHandler.startManually(context, recipe.id, force = true)
-                }) { Text("Start anyway") }
-            },
-            dismissButton = { TextButton(onClick = { outside = null }) { Text("Cancel") } },
+            onDismiss = { outside = null },
+            dismissText = "Cancel",
         )
     }
 }

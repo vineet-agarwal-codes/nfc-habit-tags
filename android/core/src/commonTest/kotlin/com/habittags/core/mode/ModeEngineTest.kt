@@ -9,6 +9,7 @@ import com.habittags.core.fixtures.Fixtures.gym
 import com.habittags.core.fixtures.Fixtures.morning
 import com.habittags.core.fixtures.Fixtures.ms
 import com.habittags.core.fixtures.Fixtures.recipes
+import com.habittags.core.fixtures.Fixtures.sleep
 import com.habittags.core.fixtures.Fixtures.tag
 import com.habittags.core.fixtures.Fixtures.zone
 import com.habittags.core.recipe.BlockGroups
@@ -21,6 +22,8 @@ import com.habittags.core.recipe.Rule
 import com.habittags.core.recipe.Timer
 import com.habittags.core.recipe.When
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -247,5 +250,66 @@ class ModeEngineTest {
         for ((pkg, expected) in cases) {
             assertEquals(expected, ModeEngine.recordReach(both, pkg).mapValues { it.value.reaches }, pkg)
         }
+    }
+
+    @Test
+    fun wakePolicyEndsAtWakeUpOrAfterUsualSleepCappedAtLatest() {
+        val sleepTag = tag("s1", sleep)
+        // start (14 Nov local) -> expected end (local time, 15 Nov unless noted)
+        val cases = listOf(
+            "21:00" to "05:00",
+            "23:00" to "05:00",
+            "00:00" to "06:00", // 15 Nov 00:00 → usual 6 h → 06:00
+            "01:00" to "07:00",
+            "03:00" to "08:00", // capped at latest wake-up
+            "04:30" to "08:00",
+        )
+        for ((start, end) in cases) {
+            val startAt = if (start < "12:00") at(start).plus(kotlin.time.Duration.parse("24h")) else at(start)
+            val started = assertIs<TapResult.Started>(ModeEngine.onTap(emptyMap(), sleepTag, sleep, startAt, zone, groups), start)
+            val endLocal = kotlinx.datetime.Instant.fromEpochMilliseconds(started.state.getValue("s1").autoOffAt!!)
+                .toLocalDateTime(zone)
+            assertEquals(end, endLocal.time.toString().take(5), "start $start")
+            assertEquals(15, endLocal.dayOfMonth, "start $start")
+        }
+    }
+
+    @Test
+    fun wakePolicyUsesTheUsersTimes() {
+        // usual 22:00, wake 06:30, latest 07:00: start 01:00 -> 01:00 + 8.5 h = 09:30, capped at 07:00
+        val t = tag("s1", sleep, mapOf("usualBedtime" to 1320, "wakeAt" to 390, "latestWake" to 420))
+        val started = assertIs<TapResult.Started>(ModeEngine.onTap(emptyMap(), t, sleep, at("01:00").plus(kotlin.time.Duration.parse("24h")), zone, groups))
+        val end = kotlinx.datetime.Instant.fromEpochMilliseconds(started.state.getValue("s1").autoOffAt!!).toLocalDateTime(zone)
+        assertEquals("07:00", end.time.toString().take(5))
+    }
+
+    @Test
+    fun wakePolicyIsDstSafe() {
+        // Europe/London falls back on 25 Oct 2026 at 02:00 → 01:00: a 23:00 start still ends at 05:00 local.
+        val london = kotlinx.datetime.TimeZone.of("Europe/London")
+        val startAt = kotlinx.datetime.LocalDateTime(2026, 10, 24, 23, 0).toInstant(london)
+        val started = assertIs<TapResult.Started>(ModeEngine.onTap(emptyMap(), tag("s1", sleep), sleep, startAt, london, groups))
+        val end = kotlinx.datetime.Instant.fromEpochMilliseconds(started.state.getValue("s1").autoOffAt!!).toLocalDateTime(london)
+        assertEquals(kotlinx.datetime.LocalDateTime(2026, 10, 25, 5, 0), end)
+    }
+
+    @Test
+    fun sleepTagWindowStartsThreeHoursBeforeUsualBedtime() {
+        val sleepTag = tag("s1", sleep)
+        val cases = listOf("19:59" to false, "20:00" to true, "23:30" to true, "04:59" to true, "05:00" to false, "15:10" to false)
+        for ((time, starts) in cases) {
+            val r = ModeEngine.onTap(emptyMap(), sleepTag, sleep, at(time), zone, groups)
+            if (starts) assertIs<TapResult.Started>(r, time) else assertEquals(listOf("20:00-05:00"), assertIs<TapResult.OutsideHours>(r, time).windows)
+        }
+    }
+
+    @Test
+    fun tagCantEndWhenRecipeSaysSo() {
+        val sleepTag = tag("s1", sleep)
+        val on = assertIs<TapResult.Started>(ModeEngine.onTap(emptyMap(), sleepTag, sleep, at("22:00"), zone, groups)).state
+        val again = assertIs<TapResult.TagCantEnd>(ModeEngine.onTap(on, sleepTag, sleep, at("22:30"), zone, groups))
+        assertEquals(on.getValue("s1").autoOffAt, again.endsAt)
+        // the gate still ends it
+        assertTrue(ModeEngine.endViaGate(on, "s1").isEmpty())
     }
 }

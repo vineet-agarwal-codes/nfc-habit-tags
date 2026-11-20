@@ -11,7 +11,15 @@ appId: app.mise
     timeout: 5000
 - assertVisible: "End early"
 - takeScreenshot: store_home_running
+# Desk's tag can't end it: a second tap leaves it on.
 - openLink: "habittags-debug://tap/last"
+- launchApp:
+    stopApp: false
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible: "Desk is on"
+- takeScreenshot: tag_cant_end
+- openLink: "habittags-debug://end/last"
 - launchApp:
     stopApp: false
 - extendedWaitUntil:

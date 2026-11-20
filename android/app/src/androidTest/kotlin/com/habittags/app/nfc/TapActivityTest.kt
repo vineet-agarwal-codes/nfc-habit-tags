@@ -51,13 +51,15 @@ class TapActivityTest {
     }
 
     @Test
-    fun tapTogglesMode() {
+    fun tapStartsModeAndDesksTagCantEndIt() {
         tap(tagId)
         val mode = app.state.value.active[tagId]
         assertNotNull(mode)
         assertEquals(setOf("social", "video"), mode!!.blockedGroups)
         tap(tagId)
-        assertTrue(app.state.value.active.isEmpty())
+        Thread.sleep(500)
+        // Desk: Deep Work has tagCanEnd = false, so a second tap leaves it on.
+        assertTrue(tagId in app.state.value.active)
     }
 
     @Test

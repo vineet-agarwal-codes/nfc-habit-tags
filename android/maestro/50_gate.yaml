@@ -15,7 +15,7 @@ appId: app.mise
 - eraseText: 1
 - hideKeyboard
 - back
-- openLink: "habittags-debug://tap/last"
+- openLink: "habittags-debug://end/last"
 - launchApp:
     stopApp: false
 - extendedWaitUntil:

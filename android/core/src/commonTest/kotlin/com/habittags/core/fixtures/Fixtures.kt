@@ -4,6 +4,7 @@ import com.habittags.core.mode.InstalledTag
 import com.habittags.core.recipe.BlockGroups
 import com.habittags.core.recipe.Checklist
 import com.habittags.core.recipe.Dnd
+import com.habittags.core.recipe.EndPolicy
 import com.habittags.core.recipe.Log
 import com.habittags.core.recipe.Mode
 import com.habittags.core.recipe.OpenApp
@@ -11,6 +12,7 @@ import com.habittags.core.recipe.ParamSpec
 import com.habittags.core.recipe.Recipe
 import com.habittags.core.recipe.Rule
 import com.habittags.core.recipe.Timer
+import com.habittags.core.recipe.When
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
@@ -45,13 +47,31 @@ object Fixtures {
         endActions = listOf(morning),
     )
 
+    /** Bed with the wake-up end policy: allowed from usual bedtime − 3 h until wake-up; the tag can't end it. */
+    val sleep = Recipe(
+        id = "sleep", schemaVersion = 3, version = 1, title = "Sleep", description = "", placementHint = "",
+        mode = Mode.toggle,
+        params = listOf(
+            ParamSpec("usualBedtime", "time", "Usual bedtime", 1380, 0, 1439),
+            ParamSpec("wakeAt", "time", "Wake up at", 300, 0, 1439, renamedFrom = "sleepEnd"),
+            ParamSpec("latestWake", "time", "Latest wake-up", 480, 0, 1439),
+        ),
+        endPolicy = EndPolicy("wake", JsonPrimitive("{{wakeAt}}"), JsonPrimitive("{{usualBedtime}}"), JsonPrimitive("{{latestWake}}")),
+        tagCanEnd = false,
+        rules = listOf(
+            Rule(When("{{usualBedtime-180}}-{{wakeAt}}"), listOf(BlockGroups(listOf("social")), Dnd)),
+            Rule(actions = listOf(Log("Bed tap outside night hours"))),
+        ),
+        endActions = listOf(morning),
+    )
+
     val gym = Recipe(
         id = "gym", schemaVersion = 1, version = 1, title = "Gym", description = "", placementHint = "",
         mode = Mode.oneShot,
         rules = listOf(Rule(actions = listOf(OpenApp("com.fit"), Timer(JsonPrimitive(60)), Log("Workout"), BlockGroups(listOf("social")), Dnd))),
     )
 
-    val recipes = listOf(desk, bed, gym).associateBy { it.id }
+    val recipes = listOf(desk, bed, sleep, gym).associateBy { it.id }
 
     fun tag(id: String, recipe: Recipe, params: Map<String, Int> = emptyMap()) = InstalledTag(id, recipe.id, recipe.title, params)
 

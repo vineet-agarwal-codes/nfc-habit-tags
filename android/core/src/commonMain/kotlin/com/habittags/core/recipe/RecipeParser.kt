@@ -17,6 +17,7 @@ fun parseCatalog(json: String): Catalog = CatalogJson.decodeFromString(Catalog.s
 
 fun isUsable(recipe: Recipe): Boolean =
     recipe.schemaVersion <= SUPPORTED_SCHEMA_VERSION &&
+        (recipe.endPolicy == null || recipe.endPolicy.type == END_POLICY_WAKE) &&
         (recipe.rules.flatMap { it.actions } + recipe.endActions).none { it is Unsupported }
 
 fun bindInt(value: JsonElement?, spec: List<ParamSpec>, userValues: Map<String, Int>): Int? {
@@ -45,8 +46,14 @@ fun validate(recipe: Recipe): String? {
     for (value in bound) {
         runCatching { bindInt(value, recipe.params, emptyMap()) }.exceptionOrNull()?.let { return it.message }
     }
+    recipe.endPolicy?.let { policy ->
+        if (policy.type != END_POLICY_WAKE) return "Unknown end policy ${policy.type}"
+        for (value in listOf(policy.wakeAt, policy.usual, policy.latest)) {
+            runCatching { bindInt(value, recipe.params, emptyMap()) }.exceptionOrNull()?.let { return it.message }
+        }
+    }
     for (window in recipe.rules.mapNotNull { it.`when`?.time }) {
-        Regex("""\{\{(\w+)\}\}""").findAll(window).map { it.groupValues[1] }
+        Regex("""\{\{(\w+)(?:[+-]\d+)?\}\}""").findAll(window).map { it.groupValues[1] }
             .firstOrNull { key -> recipe.params.none { it.key == key && it.type == "time" } }
             ?.let { return "Time window $window uses {{$it}}, which isn't a time param" }
         runCatching { windowContains(resolveWindow(window, recipe.params, emptyMap()), LocalTime(0, 0)) }

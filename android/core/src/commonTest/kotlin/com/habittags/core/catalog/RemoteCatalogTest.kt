@@ -23,7 +23,7 @@ class RemoteCatalogTest {
     @Test
     fun decodeDropsBrokenDocsAndKeepsNewerSchemas() {
         val snap = decodeRemoteCatalog(
-            recipesJson(*four.toTypedArray(), Triple("bad", """{"id":"bad"}""", null), Triple("future", recipeDoc("future", schemaVersion = 3), null)),
+            recipesJson(*four.toTypedArray(), Triple("bad", """{"id":"bad"}""", null), Triple("future", recipeDoc("future", schemaVersion = 4), null)),
             """[{"id":"social","doc":{"id":"social","title":"Social media","androidPackages":["a"]}},{"id":"broken","doc":{"id":"broken"}}]""",
             """[{"recipe_id":"gym","weekly_active":40,"installs":100}]""",
             fetchedAtMs = 7,

@@ -14,7 +14,7 @@ class DiscoverTest {
             Triple("new1", recipeDoc("new1"), "2026-11-10T00:00:00Z"), Triple("new2", recipeDoc("new2"), "2026-11-14T00:00:00Z"),
             Triple("new3", recipeDoc("new3"), "2026-11-12T00:00:00Z"), Triple("new4", recipeDoc("new4"), "2026-11-13T00:00:00Z"),
             Triple("oct31", recipeDoc("oct31"), "2026-10-31T11:00:00Z"),
-            Triple("future", recipeDoc("future", schemaVersion = 3), "2026-11-14T00:00:00Z"),
+            Triple("future", recipeDoc("future", schemaVersion = 4), "2026-11-14T00:00:00Z"),
         ),
         GROUPS,
         """[{"recipe_id":"gym","weekly_active":40,"installs":100},{"recipe_id":"bed","weekly_active":30,"installs":500},
