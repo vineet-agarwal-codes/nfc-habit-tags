@@ -52,7 +52,10 @@ class AppEngineTest {
         assertTrue(e.isInstalled("desk-deep-work"))
         assertEquals(listOf("Desk: Deep Work"), e.tags("desk-deep-work").map { it.label })
         assertEquals("started", e.tap(id, at("10:00"), tz).kind)
-        assertEquals("ended", e.tap(id, at("10:05"), tz).kind)
+        // Desk's tag can't end it
+        val again = e.tap(id, at("10:05"), tz)
+        assertEquals("tagCantEnd", again.kind)
+        assertEquals("Desk: Deep Work is on until 11:30. To stop early, use End early in the app.", again.message)
         assertEquals(listOf("tag", "tag"), e.state.tapLog.map { it.source })
         assertEquals(id, e.tagIdFromUrl(e.tagUrl(id)))
     }
@@ -61,15 +64,15 @@ class AppEngineTest {
     fun bedOutsideHoursAndStartAnyway() {
         val e = engine()
         e.install("bed-sleep")
-        assertEquals("Turns on between 21:00 and 05:00", e.myRecipes(tz).single().hours)
+        assertEquals("Turns on from 20:00 · ends by 05:00 (up to 08:00 if you sleep late)", e.myRecipes(tz).single().hours)
         val out = e.startManually("bed-sleep", false, at("15:10"), tz)
         assertEquals("outsideHours", out.kind)
-        assertEquals("between 21:00 and 05:00", out.windowsText)
-        assertEquals("Bed: Sleep Mode only turns on between 21:00 and 05:00. It's 15:10 now, so nothing was started.", out.message)
+        assertEquals("between 20:00 and 05:00", out.windowsText)
+        assertEquals("Bed: Sleep Mode only turns on between 20:00 and 05:00. It's 15:10 now, so nothing was started.", out.message)
         assertEquals("started", e.startManually("bed-sleep", true, at("15:10"), tz).kind)
 
-        e.setParam("bed-sleep", "sleepStart", 22 * 60 + 30)
-        assertEquals("22:30", e.params("bed-sleep").first { it.key == "sleepStart" }.valueText)
+        e.setParam("bed-sleep", "usualBedtime", 22 * 60 + 30)
+        assertEquals("22:30", e.params("bed-sleep").first { it.key == "usualBedtime" }.valueText)
     }
 
     @Test

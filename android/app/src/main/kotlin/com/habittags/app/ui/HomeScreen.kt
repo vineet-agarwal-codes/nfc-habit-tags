@@ -17,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import com.habittags.core.tag.TipPlace
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -85,6 +86,7 @@ fun HomeScreen(onOpenSpace: (String) -> Unit, onOpenRunning: (String) -> Unit, o
                 },
             )
         }
+        item { SecureNfcTip(TipPlace.Home, hasTag = state.tags.isNotEmpty()) }
         if (spaces.isNotEmpty()) item {
             SecondaryButton("Add a space", onBrowse, Modifier.padding(top = 4.dp))
         }

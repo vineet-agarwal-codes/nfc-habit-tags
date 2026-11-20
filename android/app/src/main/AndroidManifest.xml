@@ -45,12 +45,14 @@
         <activity
             android:name=".ui.OutsideHoursActivity"
             android:excludeFromRecents="true"
+            android:showWhenLocked="true"
             android:exported="false"
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity
             android:name=".nfc.TapActivity"
             android:excludeFromRecents="true"
+            android:showWhenLocked="true"
             android:exported="true"
             android:noHistory="true"
             android:taskAffinity=""

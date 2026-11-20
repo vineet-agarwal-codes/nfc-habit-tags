@@ -9,6 +9,7 @@ import com.habittags.core.catalog.withoutInvalidRecipes
 import com.habittags.core.gate.FrictionGate
 import com.habittags.core.mode.InstalledTag
 import com.habittags.core.mode.ModeEngine
+import com.habittags.core.mode.hoursText
 import com.habittags.core.mode.TapResult
 import com.habittags.core.recipe.Action
 import com.habittags.core.recipe.BlockGroups
@@ -314,11 +315,10 @@ class AppEngine(stateJson: String?, bundledCatalogJson: String, cachedSnapshotJs
 
     private fun card(r: Recipe, tzId: String): RecipeCard {
         val actions = r.rules.flatMap { it.actions } + r.endActions
-        val windows = runCatching { ModeEngine.modeWindows(r, currentParams(r.id)) }.getOrDefault(emptyList())
         return RecipeCard(
             id = r.id, title = r.title, summary = r.description, placementHint = r.placementHint,
             stats = statLabel(snapshot.stats[r.id]),
-            hours = if (r.mode == Mode.toggle && windows.isNotEmpty()) "Turns on ${describeWindows(windows)}" else "",
+            hours = hoursText(r, currentParams(r.id)).orEmpty(),
             oneShot = r.mode == Mode.oneShot,
             usable = isUsable(r),
             retired = snapshot.meta[r.id]?.retired == true,

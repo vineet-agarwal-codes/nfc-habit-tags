@@ -7,6 +7,7 @@ import com.habittags.core.recipe.EndPolicy
 import com.habittags.core.recipe.Mode
 import com.habittags.core.recipe.Recipe
 import com.habittags.core.recipe.bindInt
+import com.habittags.core.rules.formatMinutes
 import com.habittags.core.rules.resolveWindow
 import com.habittags.core.rules.selectRule
 import kotlinx.serialization.Serializable
@@ -186,3 +187,20 @@ object ModeEngine {
 
     fun dndWanted(active: Map<String, ActiveMode>): Boolean = active.values.any { it.dnd }
 }
+
+/**
+ * "Turns on between 21:00 and 05:00" for a toggle recipe with time windows, using the user's times;
+ * with a wake-up end: "Turns on from 20:00 · ends by 05:00 (up to 08:00 if you sleep late)"; null otherwise.
+ */
+fun hoursText(recipe: Recipe, userValues: Map<String, Int>): String? = runCatching {
+    val windows = ModeEngine.modeWindows(recipe, userValues).takeIf { it.isNotEmpty() && recipe.mode == Mode.toggle }
+        ?: return@runCatching null
+    val policy = recipe.endPolicy
+    if (policy != null && windows.size == 1) {
+        val wake = formatMinutes(bindInt(policy.wakeAt, recipe.params, userValues)!!)
+        val latest = formatMinutes(bindInt(policy.latest, recipe.params, userValues)!!)
+        "Turns on from ${windows.single().substringBefore('-')} · ends by $wake (up to $latest if you sleep late)"
+    } else {
+        "Turns on " + windows.joinToString(" or ") { w -> w.split("-").let { "between ${it[0]} and ${it[1]}" } }
+    }
+}.getOrNull()

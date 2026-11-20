@@ -25,6 +25,20 @@ Date: 2026-11-20. Status: approved by Vineet in chat (2026-11-20). Builds on the
    is the same forced start as in the app. (Previously a toast only.)
 5. **Copy:** "Turns on from 20:00 · ends by 05:00 (up to 08:00 if you sleep late)".
 
+6. **Tags on the lock screen** (Vineet, 2026-11-20): with the screen on and the phone locked, a tag
+   tap starts the mode straight away without asking to unlock. The tap screen and the "Outside its
+   usual hours" dialog show over the lock screen (`showWhenLocked`; the screen isn't turned on and the
+   keyguard isn't dismissed), so Start anyway works there too. A tag Mise doesn't know still opens the
+   app, which needs unlocking.
+7. **"Tags without unlocking" tip:** Android's Secure NFC ("Require device unlock for NFC") makes the
+   phone ignore tags while locked. Only when the phone supports it and it's on (API 29+), a tip says
+   "Want tags to work without unlocking? Turn off 'Require device unlock for NFC'." with
+   **Open NFC settings**; if the phone won't open that screen: "Your phone doesn't let apps open this
+   setting. Look for it under Settings > Connected devices > NFC." It shows in the add flow's tag step,
+   and once on Home after the first tag (with "Not now", remembered). It's re-checked whenever the
+   screen comes back, and disappears once the setting is off. The show/hide rule is a pure function in
+   the shared core with tests.
+
 ## Compatibility
 
 - Recipes using `endPolicy` or window offsets are `schemaVersion` 3; older apps show them as
