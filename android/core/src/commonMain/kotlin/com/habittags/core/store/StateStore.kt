@@ -41,6 +41,8 @@ data class AppState(
     val spaces: Map<String, Space> = emptyMap(),
     /** False until the first-run screens have been seen; existing users are migrated to true. */
     val onboarded: Boolean = false,
+    /** When the weekly emergency exit was last used (0 = never). */
+    val lastEmergencyExitMs: Long = 0,
 )
 
 const val STATE_VERSION = 3

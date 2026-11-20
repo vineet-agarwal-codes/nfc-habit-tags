@@ -7,7 +7,7 @@ appId: app.mise
 - launchApp:
     stopApp: false
 - extendedWaitUntil:
-    visible: "Desk is on"
+    visible: "Deep work is on"
     timeout: 5000
 - assertVisible: "End early"
 - takeScreenshot: store_home_running
@@ -17,11 +17,11 @@ appId: app.mise
     stopApp: false
 - waitForAnimationToEnd:
     timeout: 3000
-- assertVisible: "Desk is on"
+- assertVisible: "Deep work is on"
 - takeScreenshot: tag_cant_end
 - openLink: "habittags-debug://end/last"
 - launchApp:
     stopApp: false
 - extendedWaitUntil:
-    notVisible: "Desk is on"
+    notVisible: "Deep work is on"
     timeout: 8000

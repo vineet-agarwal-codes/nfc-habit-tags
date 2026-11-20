@@ -29,8 +29,7 @@ import androidx.core.graphics.drawable.toBitmap
 import com.habittags.app.TapHandler
 import com.habittags.app.ui.components.PrimaryButton
 import com.habittags.app.ui.components.ScreenPadding
-import com.habittags.app.ui.components.countdown
-import com.habittags.app.ui.components.reachText
+import com.habittags.app.ui.components.runningLines
 import com.habittags.app.ui.components.rememberNow
 
 /** A space that's on, full screen in its colour: name, a large countdown, what's paused, End early. */
@@ -66,12 +65,13 @@ fun RunningScreen(modeKey: String, onEndEarly: () -> Unit, onOpenSettings: (Stri
         Modifier.fillMaxSize().background(field).verticalScroll(rememberScrollState()).padding(horizontal = ScreenPadding, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("${app.spaceName(mode.recipeId)} is on", style = MaterialTheme.typography.headlineMedium, color = onField)
-        recipe?.let { Text(it.title.substringAfter(": "), style = MaterialTheme.typography.titleMedium, color = onField) }
+        val lines = app.runningLines(mode, now)
+        Text(lines.title, style = MaterialTheme.typography.headlineMedium, color = onField)
+        Text(lines.subtitle, style = MaterialTheme.typography.titleMedium, color = onField)
         Spacer(Modifier.height(24.dp))
-        val ends = mode.autoOffAt
-        Text(if (ends != null) countdown(ends - now) else "On", style = MaterialTheme.typography.displayLarge, color = onField)
-        ends?.let { Text("ends ${TapHandler.formatTime(it)}", style = MaterialTheme.typography.titleLarge, color = onField) }
+        Text(lines.remaining ?: "On until you end it", style = MaterialTheme.typography.displaySmall, color = onField)
+        lines.ends?.let { Text(it, style = MaterialTheme.typography.titleLarge, color = onField) }
+        lines.paused?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = onField) }
         mode.strictUntil?.takeIf { it > now }?.let {
             Text("Strict for ${TapHandler.minutesLeft(it - now)} more min: tapping the tag won't end it yet.", style = MaterialTheme.typography.bodyMedium, color = onField)
         }
@@ -83,8 +83,7 @@ fun RunningScreen(modeKey: String, onEndEarly: () -> Unit, onOpenSettings: (Stri
                 if (icons.size > 8) Text("+${icons.size - 8}", style = MaterialTheme.typography.titleMedium, color = onField)
             }
         }
-        if (mode.dnd) Text("Do Not Disturb is on", style = MaterialTheme.typography.bodyMedium, color = onField)
-        if (mode.reaches > 0) Text(reachText(mode.reaches), style = MaterialTheme.typography.bodyLarge, color = onField)
+        lines.reaches?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = onField) }
         Spacer(Modifier.height(32.dp))
         Text(
             if (recipe?.tagCanEnd == false) "It ends on its own at that time. To stop sooner, end it early here."
@@ -92,6 +91,7 @@ fun RunningScreen(modeKey: String, onEndEarly: () -> Unit, onOpenSettings: (Stri
             style = MaterialTheme.typography.bodyMedium, color = onField,
         )
         PrimaryButton("End early", onEndEarly, Modifier.fillMaxWidth(), container = onField, content = field)
+        EmergencyExitAction(modeKey, onField, onEnded = onClose)
         com.habittags.app.ui.components.QuietButton("${app.spaceName(mode.recipeId)} settings", { onOpenSettings(mode.recipeId) }, color = onField)
     }
 }

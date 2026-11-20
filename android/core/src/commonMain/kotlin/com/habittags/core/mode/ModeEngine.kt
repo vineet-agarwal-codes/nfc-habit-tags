@@ -37,6 +37,8 @@ data class ActiveMode(
     val blockedPackages: Set<String> = emptySet(),
     /** Times a blocked app was opened while this mode ran. */
     val reaches: Int = 0,
+    /** Started outside its hours as a nap (ends after the nap length). */
+    val nap: Boolean = false,
 )
 
 sealed interface TapResult {
@@ -107,21 +109,21 @@ object ModeEngine {
         val effects = actions.filter { !it.keepsOn() }
 
         val autoOff = bindInt(recipe.autoOffMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
+        val napMinutes = recipe.endPolicy?.nap?.takeIf { outsideHours }?.let { bindInt(it, recipe.params, tag.params) }
         val strict = bindInt(recipe.strictMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
         val blockedGroups = actions.filterIsInstance<BlockGroups>().flatMap { it.groups }.toSet()
         val mode = ActiveMode(
             tagId = tag.tagId,
             recipeId = recipe.id,
             startedAt = nowMs,
-            autoOffAt = recipe.endPolicy?.let { policy ->
-                val nap = policy.nap?.takeIf { outsideHours }?.let { bindInt(it, recipe.params, tag.params) }
-                if (nap != null) nowMs + nap * MINUTE_MS else wakeEnd(now, timeZone, policy, recipe, tag.params).toEpochMilliseconds()
-            }
+            autoOffAt = napMinutes?.let { nowMs + it * MINUTE_MS }
+                ?: recipe.endPolicy?.let { wakeEnd(now, timeZone, it, recipe, tag.params).toEpochMilliseconds() }
                 ?: autoOff?.let { nowMs + it * MINUTE_MS },
             strictUntil = strict?.let { nowMs + it * MINUTE_MS },
             blockedGroups = blockedGroups,
             dnd = actions.any { it is Dnd },
             blockedPackages = blockedGroups.flatMap { groups[it].orEmpty() }.toSet(),
+            nap = napMinutes != null,
         )
         return TapResult.Started(active + (tag.tagId to mode), effects)
     }

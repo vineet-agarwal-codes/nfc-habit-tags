@@ -19,5 +19,5 @@ appId: app.mise
 - launchApp:
     stopApp: false
 - extendedWaitUntil:
-    notVisible: "Desk is on"
+    notVisible: "Deep work is on"
     timeout: 8000

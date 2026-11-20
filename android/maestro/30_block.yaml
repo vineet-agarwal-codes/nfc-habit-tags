@@ -7,9 +7,9 @@ appId: app.mise
 - launchApp:
     stopApp: false
 - extendedWaitUntil:
-    visible: "Desk is on"
+    visible: "Deep work is on"
     timeout: 10000
-- tapOn: "Desk is on"
+- tapOn: "Deep work is on"
 - extendedWaitUntil:
     visible: "End early"
     timeout: 5000
@@ -20,5 +20,24 @@ appId: app.mise
 - extendedWaitUntil:
     visible: "Go to home screen"
     timeout: 10000
-- assertVisible: "Desk is on"
+- assertVisible: "Deep work is on"
+- assertVisible: "Blocking .*"
 - takeScreenshot: store_blocked
+# End early on the cover opens Mise's typing gate (with the emergency exit); backing out stays in Mise.
+- tapOn: "End early"
+- extendedWaitUntil:
+    visible: "End Desk early\\?"
+    timeout: 10000
+- assertVisible: "Emergency exit"
+- takeScreenshot: gate_from_cover
+- back
+- back
+- extendedWaitUntil:
+    visible: "Deep work is on"
+    timeout: 5000
+# Back to the blocked app so the e2e script can check the cover is on screen.
+- launchApp:
+    appId: com.google.android.youtube
+- extendedWaitUntil:
+    visible: "Go to home screen"
+    timeout: 10000

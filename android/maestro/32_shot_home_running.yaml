@@ -5,5 +5,5 @@ appId: app.mise
     stopApp: false
 - back
 - extendedWaitUntil:
-    visible: "Desk is on"
+    visible: "Deep work is on"
     timeout: 5000

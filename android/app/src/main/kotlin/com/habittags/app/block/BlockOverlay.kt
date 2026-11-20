@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import com.habittags.app.R
+import com.habittags.app.ui.MainActivity
 import com.habittags.app.ui.theme.SpaceColour
 
 /**
@@ -24,11 +25,14 @@ class BlockOverlay(private val context: Context) {
     private var titleView: TextView? = null
     private var detailView: TextView? = null
     private var button: TextView? = null
+    private var endEarly: TextView? = null
+    private var modeKey: String? = null
     private var shownColour: SpaceColour? = null
 
     private fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), context.resources.displayMetrics).toInt()
 
-    fun show(colour: SpaceColour, title: String, detail: String) {
+    fun show(colour: SpaceColour, title: String, detail: String, modeKey: String) {
+        this.modeKey = modeKey
         if (!Settings.canDrawOverlays(context)) {
             android.util.Log.w("BlockOverlay", "Overlay permission missing")
             return
@@ -44,7 +48,7 @@ class BlockOverlay(private val context: Context) {
         val medium = ResourcesCompat.getFont(context, R.font.mise_medium)
         val t = TextView(context).apply {
             text = title
-            textSize = 40f
+            textSize = 34f
             typeface = bold
             contentDescription = "blocked-message"
         }
@@ -65,13 +69,36 @@ class BlockOverlay(private val context: Context) {
                 context.startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
         }
+        // Opens Mise on this mode's End early screen; backing out of it lands in Mise, not the blocked app.
+        val end = TextView(context).apply {
+            text = "End early"
+            textSize = 17f
+            typeface = medium
+            gravity = Gravity.CENTER
+            setPadding(dp(28), dp(16), dp(28), dp(16))
+            isClickable = true
+            setOnClickListener {
+                val key = this@BlockOverlay.modeKey ?: return@setOnClickListener
+                hide()
+                context.startActivity(
+                    Intent(context, MainActivity::class.java)
+                        .putExtra(MainActivity.EXTRA_GATE_TAG_ID, key)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                )
+            }
+        }
+        val buttons = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(home, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+            addView(end, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { marginStart = dp(12) })
+        }
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL or Gravity.START
             setPadding(dp(28), dp(28), dp(28), dp(28))
             addView(t)
             addView(d)
-            addView(home, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+            addView(buttons, LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         }
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -85,6 +112,7 @@ class BlockOverlay(private val context: Context) {
         titleView = t
         detailView = d
         button = home
+        endEarly = end
         paint(colour)
         // Permission can be revoked between the check and here; skip the cover rather than crash the service.
         runCatching { wm.addView(root, params) }.onFailure { hide() }
@@ -101,6 +129,11 @@ class BlockOverlay(private val context: Context) {
             setColor(onField)
             cornerRadius = dp(28).toFloat()
         }
+        endEarly?.setTextColor(onField)
+        endEarly?.background = GradientDrawable().apply {
+            setStroke(dp(2), onField)
+            cornerRadius = dp(28).toFloat()
+        }
         shownColour = colour
     }
 
@@ -110,6 +143,7 @@ class BlockOverlay(private val context: Context) {
         titleView = null
         detailView = null
         button = null
+        endEarly = null
         shownColour = null
     }
 }

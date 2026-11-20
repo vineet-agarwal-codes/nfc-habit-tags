@@ -4,7 +4,7 @@ appId: app.mise
 - launchApp:
     stopApp: false
 - tapOn: "Home"
-- tapOn: "Desk is on"
+- tapOn: "Deep work is on"
 - extendedWaitUntil:
     visible: "End early"
     timeout: 5000

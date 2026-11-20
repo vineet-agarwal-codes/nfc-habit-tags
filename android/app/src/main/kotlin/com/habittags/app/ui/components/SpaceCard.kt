@@ -58,6 +58,8 @@ fun SpaceCard(
     onOpenRunning: () -> Unit,
     onEndEarly: () -> Unit,
     startAction: @Composable () -> Unit,
+    /** Plain-words lines for a running space, recomputed each second. */
+    runningLines: ((Long) -> RunningLines)? = null,
 ) {
     val running = status as? SpaceStatus.Running
     val field = colour.field.toColor()
@@ -68,26 +70,21 @@ fun SpaceCard(
             Modifier.fillMaxWidth().animateContentSize().background(field, CardShape).clickable(onClick = onOpenRunning).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text("$spaceName is on", style = MaterialTheme.typography.titleLarge, color = onField)
-            val ends = running.endsAtMs
+            val lines = runningLines?.invoke(now)
+            Text(lines?.title ?: "$spaceName is on", style = MaterialTheme.typography.headlineSmall, color = onField)
+            lines?.subtitle?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = onField) }
             Text(
-                if (ends != null) countdown(ends - now) else "On",
-                style = MaterialTheme.typography.displayMedium,
+                lines?.remaining ?: "On until you end it",
+                style = MaterialTheme.typography.headlineLarge,
                 color = onField,
+                modifier = Modifier.padding(top = 10.dp),
             )
-            val strictLeft = running.strictUntilMs?.takeIf { it > now }
-            Text(
-                listOfNotNull(
-                    recipeTitle,
-                    ends?.let { "ends ${TapHandler.formatTime(it)}" },
-                    strictLeft?.let { "strict for ${TapHandler.minutesLeft(it - now)} min" },
-                ).joinToString(" · "),
-                style = MaterialTheme.typography.bodyMedium,
-                color = onField,
-            )
-            if (running.reaches > 0) {
-                Text(reachText(running.reaches), style = MaterialTheme.typography.bodyMedium, color = onField)
+            lines?.ends?.let { Text(it, style = MaterialTheme.typography.titleMedium, color = onField) }
+            lines?.paused?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = onField, modifier = Modifier.padding(top = 6.dp)) }
+            running.strictUntilMs?.takeIf { it > now }?.let {
+                Text("Strict for ${TapHandler.minutesLeft(it - now)} more min", style = MaterialTheme.typography.bodyMedium, color = onField)
             }
+            lines?.reaches?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = onField) }
             Row(Modifier.padding(top = 8.dp)) {
                 SecondaryButton("End early", onEndEarly, container = onField, content = field)
             }

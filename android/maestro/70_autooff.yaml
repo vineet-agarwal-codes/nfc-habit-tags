@@ -7,7 +7,7 @@ appId: app.mise
 - launchApp:
     stopApp: false
 - extendedWaitUntil:
-    visible: "Desk is on"
+    visible: "Deep work is on"
     timeout: 8000
 - openLink: "habittags-debug://expire-soon/last"
 - pressKey: Home

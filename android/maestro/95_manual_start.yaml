@@ -20,7 +20,7 @@ appId: app.mise
     timeout: 5000
 - tapOn: "Start now"
 - extendedWaitUntil:
-    visible: "Desk is on"
+    visible: "Deep work is on"
     timeout: 5000
 - assertNotVisible: "Start now"
 - takeScreenshot: manual_started
@@ -34,7 +34,7 @@ appId: app.mise
     stopApp: false
 - tapOn: "Home"
 - extendedWaitUntil:
-    notVisible: "Desk is on"
+    notVisible: "Deep work is on"
     timeout: 150000
 - assertVisible: "Start now"
 - takeScreenshot: manual_after_autooff

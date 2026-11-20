@@ -1,5 +1,6 @@
 package com.habittags.app.block
 
+import com.habittags.app.ui.components.runningLines
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -114,15 +115,17 @@ class BlockService : LifecycleService() {
         // Re-read: the reach just recorded should show at once.
         val live = modes.map { app.state.value.active[it.tagId] ?: it }
         val first = live.first()
-        val ends = live.mapNotNull { it.autoOffAt }.maxOrNull()
-        val reaches = live.maxOf { it.reaches }
+        val now = System.currentTimeMillis()
+        val lines = app.runningLines(first, now)
         overlay.show(
             colour = app.spaceColour(first.recipeId),
-            title = live.joinToString(" and ") { app.modeLabel(it) } + " is on",
+            title = if (live.size == 1) lines.title else live.joinToString(" and ") { app.runningLines(it, now).title.removeSuffix(" is on") } + " are on",
             detail = listOfNotNull(
-                ends?.let { "ends ${TapHandler.formatTime(it)}" },
-                reaches.takeIf { it > 0 }?.let { com.habittags.app.ui.components.reachText(it) },
+                listOfNotNull(lines.remaining, lines.ends?.replaceFirstChar { it.lowercase() }).joinToString(" · ").takeIf { it.isNotEmpty() },
+                lines.paused,
+                lines.reaches,
             ).joinToString("\n"),
+            modeKey = first.tagId,
         )
     }
 
@@ -132,7 +135,7 @@ class BlockService : LifecycleService() {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_tag)
-            .setContentTitle("Habit mode on")
+            .setContentTitle(active.values.firstOrNull()?.let { app.runningLines(it, System.currentTimeMillis()).title } ?: "Mise")
             .setContentText(text)
             .setContentIntent(open)
             .setOngoing(true)

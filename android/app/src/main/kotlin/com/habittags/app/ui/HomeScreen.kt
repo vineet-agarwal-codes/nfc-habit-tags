@@ -1,5 +1,7 @@
 package com.habittags.app.ui
 
+import com.habittags.app.ui.components.runningLines
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -80,6 +82,7 @@ fun HomeScreen(onOpenSpace: (String) -> Unit, onOpenRunning: (String) -> Unit, o
                 onOpen = { onOpenSpace(recipe.id) },
                 onOpenRunning = { running?.let { onOpenRunning(it.modeKey) } },
                 onEndEarly = { running?.let { onEndEarly(it.modeKey) } },
+                runningLines = running?.let { state.active[it.modeKey] }?.let { mode -> { now: Long -> app.runningLines(mode, now) } },
                 startAction = {
                     if (!isUsable(recipe)) Note("Update the app to use this")
                     else StartNowButton(recipe, onNeedsPermissions = { onOpenSpace(recipe.id) })
