@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -107,7 +108,7 @@ fun AddFlow(recipeId: String, setupTagId: String?, onDone: () -> Unit) {
                     Text("Write the tag", style = MaterialTheme.typography.displaySmall)
                     Text("Any NFC sticker works: NTAG213, 215 or 216 are best. ${recipe.placementHint}", style = MaterialTheme.typography.bodyLarge)
                     PrimaryButton("Write to a tag", { writingTagId = TagPayload.newTagId() }, Modifier.fillMaxWidth())
-                    QuietButton("Skip, start it from the app", { finish(null) })
+                    QuietButton("Skip, start it from the app", { finish(null) }, Modifier.align(Alignment.CenterHorizontally))
                     Note("You can write a tag later from the space.")
                 }
             }

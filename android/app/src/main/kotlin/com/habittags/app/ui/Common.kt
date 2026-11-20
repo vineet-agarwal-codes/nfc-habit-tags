@@ -125,11 +125,11 @@ private fun neededPermissions(context: Context, recipe: Recipe): List<Needed> {
     val actions = recipe.rules.flatMap { it.actions }
     return buildList {
         if (actions.any { it is BlockGroups }) {
-            add(Needed("Usage access (to see which app is open)", Permissions.hasUsageAccess(context)) { Permissions.usageAccessIntent() })
+            add(Needed("Usage access (to see which app is open)", Permissions.hasUsageAccess(context)) { Permissions.usageAccessIntent(it) })
             add(Needed("Display over other apps (to cover blocked apps)", Permissions.hasOverlay(context)) { Permissions.overlayIntent(it) })
         }
         if (actions.any { it is Dnd }) {
-            add(Needed("Do Not Disturb access", Permissions.hasDndAccess(context)) { Permissions.dndAccessIntent() })
+            add(Needed("Do Not Disturb access", Permissions.hasDndAccess(context)) { Permissions.dndAccessIntent(it) })
         }
     }
 }
