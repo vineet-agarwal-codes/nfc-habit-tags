@@ -24,7 +24,11 @@ appId: app.mise
     index: 0
 - tapOn: "Search your apps"
 - inputText: "Contacts"
-- tapOn: "Contacts"
+# index 1: the app row, not the search field holding the same text
+- tapOn:
+    text: "Contacts"
+    index: 1
+- hideKeyboard
 - tapOn: "Save"
 - scrollUntilVisible:
     element: "Next"
