@@ -4,6 +4,9 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.mutableStateOf
 import com.habittags.app.HabitTagsApp
 import com.habittags.app.block.BlockController
@@ -18,7 +21,8 @@ class MainActivity : ComponentActivity() {
         pending.value = intent
         HabitTagsApp.from(this).catalogNow()
         BlockController.sync(this)
-        setContent { MiseTheme { AppNav(this) } }
+        // Surface supplies the theme's background and text colour to every screen, including ones outside a Scaffold.
+        setContent { MiseTheme { Surface(Modifier.fillMaxSize()) { AppNav(this) } } }
     }
 
     override fun onNewIntent(intent: Intent) {
