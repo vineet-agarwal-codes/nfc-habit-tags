@@ -57,7 +57,8 @@ fun SpaceSettingsScreen(recipeId: String, onOpenTag: (String) -> Unit, onAddFlow
     val tags = state.tags.values.filter { it.recipeId == recipeId }.sortedBy { it.label }
     val running = state.active.values.any { it.recipeId == recipeId }
     var writingTagId by remember { mutableStateOf<String?>(null) }
-    var name by remember(space?.name) { mutableStateOf(space?.name ?: Spaces.defaultName(recipe)) }
+    // Local text: saving trims, so keying this on the saved name would eat a typed trailing space.
+    var name by remember(recipeId) { mutableStateOf(space?.name ?: Spaces.defaultName(recipe)) }
     val colour = SpaceColour.of(space?.colour)
     val uri = LocalUriHandler.current
 
