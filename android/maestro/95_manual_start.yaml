@@ -9,8 +9,8 @@ appId: app.mise
     centerElement: true
 - tapOn: "Deep Work"
 - scrollUntilVisible:
-    element: "Add to Desk"
-- tapOn: "Add to Desk"
+    element: "Set up your desk"
+- tapOn: "Set up your desk"
 - scrollUntilVisible:
     element: "Next"
 - tapOn: "Next"

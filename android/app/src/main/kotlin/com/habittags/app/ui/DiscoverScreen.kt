@@ -88,6 +88,6 @@ private fun RecipeCard(recipe: Recipe, stats: List<String>, onOpen: () -> Unit, 
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(Modifier.padding(top = 8.dp)) { PrimaryButton("Add to ${Spaces.defaultName(recipe)}", onAdd) }
+        Row(Modifier.padding(top = 8.dp)) { PrimaryButton("Set up your ${Spaces.defaultName(recipe).lowercase()}", onAdd) }
     }
 }

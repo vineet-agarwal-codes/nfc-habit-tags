@@ -14,8 +14,8 @@ appId: app.mise
 - assertVisible: "What it does"
 - takeScreenshot: store_recipe
 - scrollUntilVisible:
-    element: "Add to Desk"
-- tapOn: "Add to Desk"
+    element: "Set up your desk"
+- tapOn: "Set up your desk"
 - assertVisible: "Set up Desk"
 - scrollUntilVisible:
     element: "Add apps"

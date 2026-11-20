@@ -10,8 +10,8 @@ appId: app.mise
 - tapOn: "Sleep Mode"
 - assertVisible: "Turns on from 20:00 · ends by 05:00 \\(up to 08:00 if you sleep late\\)"
 - scrollUntilVisible:
-    element: "Add to Bed"
-- tapOn: "Add to Bed"
+    element: "Set up your bed"
+- tapOn: "Set up your bed"
 - assertVisible: "Usual bedtime: 23:00"
 - assertVisible: "Wake up at: 05:00"
 - assertVisible: "Latest wake-up: 08:00"

@@ -53,7 +53,7 @@ fun RecipeScreen(recipeId: String, onAdd: () -> Unit, onOpenSpace: () -> Unit) {
         if (recipeId in state.installedRecipes) {
             PrimaryButton("Open ${app.spaceName(recipeId)}", onOpenSpace, Modifier.fillMaxWidth())
         } else {
-            PrimaryButton("Add to $space", onAdd, Modifier.fillMaxWidth())
+            PrimaryButton("Set up your ${space.lowercase()}", onAdd, Modifier.fillMaxWidth())
         }
     }
 }
