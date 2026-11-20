@@ -72,7 +72,10 @@ fun OnboardingScreen(onDone: () -> Unit) {
             }
         }
         Column(Modifier.padding(horizontal = ScreenPadding), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.align(Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
+            ) {
                 PAGES.indices.forEach { i ->
                     Box(
                         Modifier.height(8.dp).width(if (i == page) 24.dp else 8.dp)
