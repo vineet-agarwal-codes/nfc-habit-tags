@@ -3,7 +3,10 @@ appId: app.mise
 - openLink: "habittags-debug://gate-words/5"
 - launchApp:
     stopApp: false
-- tapOn: "Home"
+# From Home or the running screen; both offer End early.
+- tapOn:
+    text: "Home"
+    optional: true
 - tapOn: "End early"
 - assertVisible: "End Desk early?"
 - assertVisible: "0 of [0-9]+ words"

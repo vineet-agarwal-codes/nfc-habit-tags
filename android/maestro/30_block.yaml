@@ -21,5 +21,5 @@ appId: app.mise
     visible: "Go to home screen"
     timeout: 10000
 - assertVisible: "Deep work is on"
-- assertVisible: "Blocking .*"
+- assertVisible: "(?s).*Blocking .*"
 - takeScreenshot: store_blocked
