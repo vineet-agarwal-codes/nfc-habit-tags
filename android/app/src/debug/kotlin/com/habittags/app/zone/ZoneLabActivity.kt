@@ -287,7 +287,7 @@ private fun ZoneLabScreen(askFor: androidx.compose.runtime.MutableState<Pair<Str
             Text(if (tracking) "On" else "Off")
         }
         Text(
-            "Checks your spot each time you stop moving and asks \"Are you at …?\" about once an hour.",
+            "Checks your spot each time you stop moving and asks \"Are you at …?\" whenever it thinks you moved to a different spot.",
             style = MaterialTheme.typography.bodySmall,
         )
 

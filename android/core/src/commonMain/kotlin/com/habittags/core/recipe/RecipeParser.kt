@@ -52,7 +52,7 @@ fun validate(recipe: Recipe): String? {
     }
     recipe.endPolicy?.let { policy ->
         if (policy.type != END_POLICY_WAKE) return "Unknown end policy ${policy.type}"
-        for (value in listOf(policy.wakeAt, policy.usual, policy.latest)) {
+        for (value in listOfNotNull(policy.wakeAt, policy.usual, policy.latest, policy.nap)) {
             runCatching { bindInt(value, recipe.params, emptyMap()) }.exceptionOrNull()?.let { return it.message }
         }
     }

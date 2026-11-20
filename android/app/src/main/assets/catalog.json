@@ -112,6 +112,14 @@
           "default": 480,
           "min": 0,
           "max": 1439
+        },
+        {
+          "key": "napMinutes",
+          "type": "duration",
+          "label": "Nap length",
+          "default": 60,
+          "min": 15,
+          "max": 240
         }
       ],
       "rules": [
@@ -163,7 +171,8 @@
         "type": "wake",
         "wakeAt": "{{wakeAt}}",
         "usual": "{{usualBedtime}}",
-        "latest": "{{latestWake}}"
+        "latest": "{{latestWake}}",
+        "nap": "{{napMinutes}}"
       }
     },
     {

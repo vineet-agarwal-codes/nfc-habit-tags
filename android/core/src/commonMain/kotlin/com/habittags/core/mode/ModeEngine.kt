@@ -93,7 +93,9 @@ object ModeEngine {
         if (recipe.mode == Mode.oneShot) return TapResult.Ran(actions.filter { it !is BlockGroups && it !is Dnd })
         // A toggle rule with nothing to keep on (e.g. a daytime tap on the bed tag) just runs its effects,
         // unless the user chose "Start anyway", which uses the recipe's mode rule regardless of its hours.
+        var outsideHours = false
         if (actions.none { it.keepsOn() }) {
+            outsideHours = true
             val modeRule = recipe.rules.firstOrNull { r -> r.actions.any { it.keepsOn() } }
             val windows = modeWindows(recipe, tag.params)
             when {
@@ -111,7 +113,10 @@ object ModeEngine {
             tagId = tag.tagId,
             recipeId = recipe.id,
             startedAt = nowMs,
-            autoOffAt = recipe.endPolicy?.let { wakeEnd(now, timeZone, it, recipe, tag.params).toEpochMilliseconds() }
+            autoOffAt = recipe.endPolicy?.let { policy ->
+                val nap = policy.nap?.takeIf { outsideHours }?.let { bindInt(it, recipe.params, tag.params) }
+                if (nap != null) nowMs + nap * MINUTE_MS else wakeEnd(now, timeZone, policy, recipe, tag.params).toEpochMilliseconds()
+            }
                 ?: autoOff?.let { nowMs + it * MINUTE_MS },
             strictUntil = strict?.let { nowMs + it * MINUTE_MS },
             blockedGroups = blockedGroups,

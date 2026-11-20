@@ -275,6 +275,23 @@ class ModeEngineTest {
     }
 
     @Test
+    fun startAnywayOutsideBedHoursIsANap() {
+        // Outside the allowed hours, Start anyway runs for the nap length, not until the next wake-up.
+        val cases = listOf(emptyMap<String, Int>() to "16:10", mapOf("napMinutes" to 30) to "15:40")
+        for ((values, end) in cases) {
+            val started = assertIs<TapResult.Started>(
+                ModeEngine.startManually(emptyMap(), tag("s1", sleep, values), sleep, at("15:10"), zone, groups, force = true),
+            )
+            val endLocal = kotlinx.datetime.Instant.fromEpochMilliseconds(started.state.getValue("s1").autoOffAt!!).toLocalDateTime(zone)
+            assertEquals(end, endLocal.time.toString().take(5), "$values")
+        }
+        // Inside the hours, forcing changes nothing: still the wake-up end.
+        val night = assertIs<TapResult.Started>(ModeEngine.startManually(emptyMap(), tag("s1", sleep), sleep, at("23:00"), zone, groups, force = true))
+        val nightEnd = kotlinx.datetime.Instant.fromEpochMilliseconds(night.state.getValue("s1").autoOffAt!!).toLocalDateTime(zone)
+        assertEquals("05:00", nightEnd.time.toString().take(5))
+    }
+
+    @Test
     fun wakePolicyUsesTheUsersTimes() {
         // usual 22:00, wake 06:30, latest 07:00: start 01:00 -> 01:00 + 8.5 h = 09:30, capped at 07:00
         val t = tag("s1", sleep, mapOf("usualBedtime" to 1320, "wakeAt" to 390, "latestWake" to 420))

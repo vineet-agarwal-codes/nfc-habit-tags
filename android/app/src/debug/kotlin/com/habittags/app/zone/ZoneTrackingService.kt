@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Lab tracking: after the step detector sees walking and the phone then stays still for
- * [STILL_MS], take a sample and guess. About hourly, ask "Are you at X?". Phones without a step
+ * [STILL_MS], take a sample and guess. Ask "Are you at X?" whenever the guess moves to another spot. Phones without a step
  * detector sample every [FALLBACK_MS]. Runs as a location foreground service started from the app.
  */
 class ZoneTrackingService : LifecycleService(), SensorEventListener {
@@ -85,8 +85,11 @@ class ZoneTrackingService : LifecycleService(), SensorEventListener {
         val prefs = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val now = System.currentTimeMillis()
         val guess = obs.guess
-        if (guess != null && now - prefs.getLong(KEY_LAST_ASK, 0) >= ASK_EVERY_MS) {
-            prefs.edit().putLong(KEY_LAST_ASK, now).apply()
+        // Ask whenever the guess moves to a different spot (a likely zone change), with a short floor
+        // against flip-flopping between two neighbouring spots.
+        val changed = guess != null && guess.spot != prefs.getString(KEY_LAST_SPOT, null)
+        if (changed && now - prefs.getLong(KEY_LAST_ASK, 0) >= ASK_MIN_GAP_MS) {
+            prefs.edit().putLong(KEY_LAST_ASK, now).putString(KEY_LAST_SPOT, guess!!.spot).apply()
             ask(obs.id, guess.spot)
         }
         if (ZoneLabStore.pending.value >= UPLOAD_BATCH) ZoneLabStore.upload(this)
@@ -154,7 +157,8 @@ class ZoneTrackingService : LifecycleService(), SensorEventListener {
         private const val STILL_MS = 20_000L
         private const val FALLBACK_MS = 15 * 60_000L
         private const val TICK_MS = 5_000L
-        private const val ASK_EVERY_MS = 55 * 60_000L
+        private const val ASK_MIN_GAP_MS = 2 * 60_000L
+        private const val KEY_LAST_SPOT = "lastAskedSpot"
         private const val UPLOAD_BATCH = 10
 
         @Volatile var running = false

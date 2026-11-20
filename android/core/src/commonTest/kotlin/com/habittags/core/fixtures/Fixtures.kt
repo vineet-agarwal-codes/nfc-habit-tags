@@ -55,8 +55,12 @@ object Fixtures {
             ParamSpec("usualBedtime", "time", "Usual bedtime", 1380, 0, 1439),
             ParamSpec("wakeAt", "time", "Wake up at", 300, 0, 1439, renamedFrom = "sleepEnd"),
             ParamSpec("latestWake", "time", "Latest wake-up", 480, 0, 1439),
+            ParamSpec("napMinutes", "duration", "Nap length", 60, 15, 240),
         ),
-        endPolicy = EndPolicy("wake", JsonPrimitive("{{wakeAt}}"), JsonPrimitive("{{usualBedtime}}"), JsonPrimitive("{{latestWake}}")),
+        endPolicy = EndPolicy(
+            "wake", JsonPrimitive("{{wakeAt}}"), JsonPrimitive("{{usualBedtime}}"), JsonPrimitive("{{latestWake}}"),
+            nap = JsonPrimitive("{{napMinutes}}"),
+        ),
         tagCanEnd = false,
         rules = listOf(
             Rule(When("{{usualBedtime-180}}-{{wakeAt}}"), listOf(BlockGroups(listOf("social")), Dnd)),

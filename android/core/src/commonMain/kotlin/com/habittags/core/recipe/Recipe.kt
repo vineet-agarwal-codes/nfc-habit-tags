@@ -45,10 +45,17 @@ data class ParamSpec(
 
 /**
  * How a running mode ends instead of a fixed `autoOffMinutes`. Type "wake": at the next [wakeAt], or
- * after the usual sleep ([usual] → [wakeAt]) when started late, but never after [latest].
+ * after the usual sleep ([usual] → [wakeAt]) when started late, but never after [latest]. Started
+ * with "Start anyway" outside its hours it's a nap: [nap] minutes when set.
  */
 @Serializable
-data class EndPolicy(val type: String, val wakeAt: JsonElement, val usual: JsonElement, val latest: JsonElement)
+data class EndPolicy(
+    val type: String,
+    val wakeAt: JsonElement,
+    val usual: JsonElement,
+    val latest: JsonElement,
+    val nap: JsonElement? = null,
+)
 
 const val END_POLICY_WAKE = "wake"
 
