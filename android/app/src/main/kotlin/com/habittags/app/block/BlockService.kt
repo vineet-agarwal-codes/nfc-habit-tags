@@ -125,7 +125,6 @@ class BlockService : LifecycleService() {
                 lines.paused,
                 lines.reaches,
             ).joinToString("\n"),
-            modeKey = first.tagId,
         )
     }
 
