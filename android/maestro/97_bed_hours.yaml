@@ -1,6 +1,6 @@
 appId: app.mise
 ---
-# Bed's sleep hours are shown and editable; Start now outside them offers "Start anyway".
+# Bed's sleep hours are shown and editable; Start now outside them offers "Start a nap".
 - launchApp:
     stopApp: false
 - tapOn: "Discover"
@@ -34,9 +34,9 @@ appId: app.mise
 - tapOn: "Bed"
 - assertVisible: "Turns on from 00:00 · ends by 00:01.*"
 - tapOn: "Start now"
-- assertVisible: "Outside its usual hours"
+- assertVisible: "Take a nap?"
 - takeScreenshot: bed_outside_hours
-- tapOn: "Start anyway"
+- tapOn: "Start a nap"
 - extendedWaitUntil:
     visible: "Bed is on now"
     timeout: 5000

@@ -116,7 +116,7 @@ fun StartNowButton(recipe: Recipe, enabled: Boolean = true, onNeedsPermissions: 
     )
     outside?.let { result ->
         OutsideHoursDialog(
-            app.spaceName(recipe.id), result.windows,
+            app.spaceName(recipe.id), result.windows, napMinutes(context, recipe.id),
             onStart = {
                 outside = null
                 TapHandler.startManually(context, recipe.id, force = true)
