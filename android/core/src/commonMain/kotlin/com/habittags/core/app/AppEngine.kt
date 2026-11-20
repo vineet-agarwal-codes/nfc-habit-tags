@@ -1,6 +1,7 @@
 package com.habittags.core.app
 
 import com.habittags.core.catalog.CatalogSnapshot
+import com.habittags.core.recipe.paramValue
 import com.habittags.core.catalog.decodeRemoteCatalog
 import com.habittags.core.catalog.discoverOrder
 import com.habittags.core.catalog.mergeCatalog
@@ -122,7 +123,7 @@ class AppEngine(stateJson: String?, bundledCatalogJson: String, cachedSnapshotJs
         val recipe = anyRecipe(recipeId) ?: return emptyList()
         val current = currentParams(recipeId)
         return recipe.params.map { spec ->
-            val value = (current[spec.key] ?: spec.default).coerceIn(spec.min, spec.max)
+            val value = paramValue(spec, current)
             val time = spec.type == "time"
             ParamView(
                 spec.key, spec.label, spec.type, value, spec.min, spec.max,

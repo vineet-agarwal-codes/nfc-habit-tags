@@ -24,7 +24,6 @@ Date: 2026-11-20. Status: approved by Vineet in chat (2026-11-20). Builds on the
    "Bed normally starts from 20:00. It's 15:10 now." — **Start anyway** / **Not now**. Start anyway
    is the same forced start as in the app. (Previously a toast only.)
 5. **Copy:** "Turns on from 20:00 · ends by 05:00 (up to 08:00 if you sleep late)".
-
 6. **Tags on the lock screen** (Vineet, 2026-11-20): with the screen on and the phone locked, a tag
    tap starts the mode straight away without asking to unlock. The tap screen and the "Outside its
    usual hours" dialog show over the lock screen (`showWhenLocked`; the screen isn't turned on and the

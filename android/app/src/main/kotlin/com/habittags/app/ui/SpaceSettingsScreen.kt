@@ -40,6 +40,7 @@ import com.habittags.app.ui.components.SectionTitle
 import com.habittags.app.ui.theme.SpaceColour
 import com.habittags.app.ui.theme.toColor
 import com.habittags.core.mode.InstalledTag
+import com.habittags.core.recipe.paramValue
 import com.habittags.core.recipe.BlockGroups
 import com.habittags.core.recipe.isUsable
 import com.habittags.core.space.Spaces
@@ -99,7 +100,7 @@ fun SpaceSettingsScreen(recipeId: String, onOpenTag: (String) -> Unit, onAddFlow
             SectionTitle("Settings")
             hoursText(recipe, current)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
             recipe.params.forEach { spec ->
-                ParamControl(spec, (current[spec.key] ?: spec.default).coerceIn(spec.min, spec.max)) { v ->
+                ParamControl(spec, paramValue(spec, current)) { v ->
                     app.update { s ->
                         s.copy(
                             tags = s.tags.mapValues { (_, t) -> if (t.recipeId == recipeId) t.copy(params = t.params + (spec.key to v)) else t },

@@ -29,4 +29,16 @@ class ParamMergeTest {
         )
         for ((user, expected) in cases) assertEquals(expected, mergeParams(user, listOf(wake)), "case $user")
     }
+
+    @Test
+    fun renamedParamIsReadUntilSavedUnderItsNewKey() {
+        val wake = ParamSpec("wakeAt", "time", "Wake up at", 300, 0, 1439, renamedFrom = "sleepEnd")
+        val cases = listOf(
+            mapOf("sleepEnd" to 420) to 420,
+            mapOf("sleepEnd" to 420, "wakeAt" to 360) to 360,
+            emptyMap<String, Int>() to 300,
+            mapOf("sleepEnd" to 5000) to 1439,
+        )
+        for ((user, expected) in cases) assertEquals(expected, com.habittags.core.recipe.paramValue(wake, user), "case $user")
+    }
 }

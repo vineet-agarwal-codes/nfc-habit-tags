@@ -27,8 +27,12 @@ fun bindInt(value: JsonElement?, spec: List<ParamSpec>, userValues: Map<String, 
     val key = PLACEHOLDER.matchEntire(value.content)?.groupValues?.get(1)
         ?: throw IllegalArgumentException("Not a number or {{param}}: ${value.content}")
     val param = spec.firstOrNull { it.key == key } ?: throw IllegalArgumentException("Unknown param: $key")
-    return (userValues[key] ?: param.default).coerceIn(param.min, param.max)
+    return paramValue(param, userValues)
 }
+
+/** The user's value for [spec] (or the value saved under its `renamedFrom` key), else its default; within limits. */
+fun paramValue(spec: ParamSpec, userValues: Map<String, Int>): Int =
+    (userValues[spec.key] ?: spec.renamedFrom?.let { userValues[it] } ?: spec.default).coerceIn(spec.min, spec.max)
 
 /**
  * The first problem that would make this recipe throw when tapped or edited, or null. Remote

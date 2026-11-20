@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.habittags.app.block.BlockController
 import com.habittags.core.catalog.mergeParams
+import com.habittags.core.recipe.paramValue
 import com.habittags.core.recipe.isUsable
 
 @Composable
@@ -45,7 +46,7 @@ fun TagDetailScreen(tagId: String, onDone: () -> Unit) {
         OutlinedTextField(tag.label, { v -> edit { it.copy(label = v) } }, Modifier.fillMaxWidth(), label = { Text("Tag name") }, singleLine = true)
         Text(recipe?.title ?: "Recipe not available on this phone", style = MaterialTheme.typography.titleMedium)
         recipe?.params?.forEach { spec ->
-            ParamControl(spec, (tag.params[spec.key] ?: spec.default).coerceIn(spec.min, spec.max)) { v -> edit { it.copy(params = it.params + (spec.key to v)) } }
+            ParamControl(spec, paramValue(spec, tag.params)) { v -> edit { it.copy(params = it.params + (spec.key to v)) } }
         }
         Text("Changes apply on your next tap. The tag itself doesn't need rewriting.", style = MaterialTheme.typography.bodySmall)
 

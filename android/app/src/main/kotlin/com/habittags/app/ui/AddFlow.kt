@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import com.habittags.core.tag.TipPlace
+import com.habittags.core.recipe.paramValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -84,7 +85,7 @@ fun AddFlow(recipeId: String, setupTagId: String?, onDone: () -> Unit) {
                 Text("Set up $name", style = MaterialTheme.typography.displaySmall)
                 Text(recipe.title.substringAfter(": "), style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(name, { name = it }, Modifier.fillMaxWidth(), label = { Text("Space name") }, singleLine = true)
-                recipe.params.forEach { spec -> ParamControl(spec, params[spec.key] ?: spec.default) { params[spec.key] = it } }
+                recipe.params.forEach { spec -> ParamControl(spec, paramValue(spec, params)) { params[spec.key] = it } }
                 hoursText(recipe, params.toMap())?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                 val groups = recipe.rules.flatMap { it.actions }.filterIsInstance<BlockGroups>().flatMap { it.groups }.distinct()
                 if (groups.isNotEmpty()) {
