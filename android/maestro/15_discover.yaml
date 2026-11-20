@@ -5,7 +5,12 @@ appId: app.mise
 - tapOn: "Discover"
 - assertVisible: "New recipes"
 - assertVisible: "Water me"
-- takeScreenshot: store_discover
+- scrollUntilVisible:
+    element: "For bedtime"
+    centerElement: true
+- scrollUntilVisible:
+    element: ".*Used by 30 people this week.*"
+    centerElement: true
 - scrollUntilVisible:
     element: "For workouts"
     centerElement: true
@@ -13,8 +18,3 @@ appId: app.mise
     element: ".*Used by 40 people this week · 100 installs"
     centerElement: true
 - assertVisible: "Workout"
-- scrollUntilVisible:
-    element: "For bedtime"
-    centerElement: true
-- assertVisible: ".*Used by 30 people this week.*"
-- takeScreenshot: discover

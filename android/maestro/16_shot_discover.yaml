@@ -5,6 +5,6 @@ appId: app.mise
     stopApp: false
 - tapOn: "Home"
 - tapOn: "Discover"
-- extendedWaitUntil:
-    visible: "Recipes"
-    timeout: 5000
+- scrollUntilVisible:
+    element: "Recipes"
+    direction: UP

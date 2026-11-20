@@ -132,6 +132,8 @@ fun GateScreen(tagId: String, onDone: () -> Unit) {
                     setHintTextColor(hintColor)
                     setTextColor(textColor)
                     textSize = 18f
+                    // The no-suggestions input type falls back to monospace; use the app's face instead.
+                    typeface = androidx.core.content.res.ResourcesCompat.getFont(ctx, com.habittags.app.R.font.mise_regular)
                     minLines = 2
                     maxLines = 3
                     val pad = (14 * ctx.resources.displayMetrics.density).toInt()
