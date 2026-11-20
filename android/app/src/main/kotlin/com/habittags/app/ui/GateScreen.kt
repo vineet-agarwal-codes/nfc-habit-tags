@@ -77,14 +77,14 @@ fun GateScreen(tagId: String, onDone: () -> Unit) {
     val doneColor = colors.onSurfaceVariant
 
     Column(Modifier.fillMaxSize().imePadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("End $label early?", style = MaterialTheme.typography.headlineMedium, color = field)
+        Text("End $label early?", style = MaterialTheme.typography.headlineMedium, color = colors.onSurface)
         val tagCanEnd = mode?.let { app.recipe(it.recipeId)?.tagCanEnd } ?: true
         Text(
             "Type the text below to end $label now, letter by letter." + if (tagCanEnd) " Or tap your tag to end it for free." else "",
             style = MaterialTheme.typography.bodyMedium,
             color = colors.onSurfaceVariant,
         )
-        EmergencyExitAction(tagId, colors.onSurfaceVariant, onEnded = onDone)
+        EmergencyExitAction(tagId, colors.onSurface, onEnded = onDone)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("${FrictionGate.wordsTyped(typed, passage)} of $totalWords words", style = MaterialTheme.typography.labelLarge)
             LinearProgressIndicator(progress = { matched.toFloat() / passage.length }, modifier = Modifier.weight(1f), color = field, trackColor = colors.surfaceVariant)
