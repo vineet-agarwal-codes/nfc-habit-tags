@@ -4,8 +4,8 @@ insert into recipes(id, doc, published) values ('hidden-test', '{"id":"hidden-te
 set local role anon;
 do $$
 begin
-  if (select count(*) from recipes) <> 4 then
-    raise exception 'anon should see 4 published recipes, saw %', (select count(*) from recipes);
+  if (select count(*) from recipes) <> 5 then
+    raise exception 'anon should see 5 published recipes, saw %', (select count(*) from recipes);
   end if;
   if exists (select 1 from recipes where id = 'hidden-test') then
     raise exception 'anon can see an unpublished recipe';

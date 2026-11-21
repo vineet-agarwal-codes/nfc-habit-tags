@@ -14,6 +14,9 @@ Used to draw "<Space> is on" over a blocked app the user chose to block, while a
 ## Do Not Disturb access (ACCESS_NOTIFICATION_POLICY)
 For recipes that silence notifications; uses an automatic Do Not Disturb rule so the user's own DND state is restored when the mode ends.
 
+## Microphone (RECORD_AUDIO)
+Runtime permission, asked only the first time the user holds "Hold to talk" in Feedback. Used only while the button is held to record a voice note the user then sends as feedback. No background recording.
+
 ## Not used
 No AccessibilityService, no QUERY_ALL_PACKAGES (a `<queries>` launcher intent is declared instead), no location, no SMS/call log, no exact alarms.
 

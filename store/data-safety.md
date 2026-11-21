@@ -13,8 +13,12 @@ Based on what the app actually sends (`report_events`: installed recipe IDs, dai
 |---|---|---|---|---|---|
 | App activity → App interactions | Yes | No | No | Required | Analytics, App functionality (popularity counts shown in Discover) |
 | Device or other IDs → Device or other IDs | Yes (random app-generated ID) | No | No | Required | Analytics, App functionality |
+| Messages → Other in-app messages | Yes (Feedback text the user types) | No | No | Optional | App functionality (feedback / support) |
+| Photos and videos → Photos | Yes (screenshots/photos the user attaches to Feedback) | No | No | Optional | App functionality (feedback / support) |
+| Audio → Voice or sound recordings | Yes (voice notes the user records in Feedback) | No | No | Optional | App functionality (feedback / support) |
+| Device or other IDs / App info and performance → Diagnostics | Yes (app version, Android version, phone model sent with feedback) | No | No | Optional | App functionality (feedback / support) |
 
-Not collected: location, personal info, financial info, health, messages, photos/videos, audio, files, calendar, contacts, web browsing, installed apps (the list of apps the user blocks stays on the device), crash logs, diagnostics.
+Not collected: location, personal info, financial info, health, files, calendar, contacts, web browsing, installed apps (the list of apps the user blocks stays on the device), crash logs.
 
 Notes for the form:
 - Collection is not optional in 1.0 (no opt-out switch); the anonymous counts power Discover's popularity. Answer "Required" honestly.

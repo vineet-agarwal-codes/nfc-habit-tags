@@ -27,6 +27,7 @@ import com.habittags.app.TapHandler
 import com.habittags.app.ui.components.Note
 import com.habittags.app.ui.components.Panel
 import com.habittags.app.ui.components.PrimaryButton
+import com.habittags.app.ui.components.QuietButton
 import com.habittags.app.ui.components.ScanTarget
 import com.habittags.app.ui.components.ScreenPadding
 import com.habittags.app.ui.components.SecondaryButton
@@ -42,7 +43,7 @@ import kotlinx.datetime.TimeZone
 
 /** Home: one card per space, running ones first, and the tag target at the bottom. */
 @Composable
-fun HomeScreen(onOpenSpace: (String) -> Unit, onOpenRunning: (String) -> Unit, onEndEarly: (String) -> Unit, onBrowse: () -> Unit) {
+fun HomeScreen(onOpenSpace: (String) -> Unit, onOpenRunning: (String) -> Unit, onEndEarly: (String) -> Unit, onBrowse: () -> Unit, onFeedback: () -> Unit) {
     val app = LocalContext.current.app()
     val snapshot by app.snapshot.collectAsState()
     val state by app.state.collectAsState()
@@ -57,8 +58,9 @@ fun HomeScreen(onOpenSpace: (String) -> Unit, onOpenRunning: (String) -> Unit, o
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 24.dp, bottom = 4.dp)) {
-                Text("Mise", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary)
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 4.dp)) {
+                Text("Mise", style = MaterialTheme.typography.displaySmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+                QuietButton("Feedback", onFeedback)
             }
         }
         if (spaces.isEmpty()) item {

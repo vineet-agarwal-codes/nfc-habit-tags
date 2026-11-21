@@ -27,6 +27,9 @@ object BackendFactory {
             override suspend fun fetchCatalog() = current().fetchCatalog()
             override suspend fun report(deviceId: String, events: List<UsageEvent>) = current().report(deviceId, events)
             override val supportsRealtime get() = current().supportsRealtime
+            override suspend fun uploadFeedbackFile(path: String, bytes: ByteArray, contentType: String) =
+                current().uploadFeedbackFile(path, bytes, contentType)
+            override suspend fun submitFeedback(body: String) = current().submitFeedback(body)
         }
     }
 }
@@ -44,10 +47,20 @@ private class FixtureBackend(private val context: Context) : Backend {
     override suspend fun report(deviceId: String, events: List<UsageEvent>) = withContext(Dispatchers.IO) {
         File(context.filesDir, "debug_reports.jsonl").appendText(reportBody(deviceId, events) + "\n")
     }
+
+    override suspend fun uploadFeedbackFile(path: String, bytes: ByteArray, contentType: String) = withContext(Dispatchers.IO) {
+        File(context.filesDir, "debug_feedback_files/$path").apply { parentFile?.mkdirs() }.writeBytes(bytes)
+    }
+
+    override suspend fun submitFeedback(body: String) = withContext(Dispatchers.IO) {
+        File(context.filesDir, "debug_feedback.jsonl").appendText(body + "\n")
+    }
 }
 
 private object OfflineBackend : Backend {
     override val supportsRealtime = false
     override suspend fun fetchCatalog(): CatalogSnapshot = throw IOException("offline (debug)")
     override suspend fun report(deviceId: String, events: List<UsageEvent>) = throw IOException("offline (debug)")
+    override suspend fun uploadFeedbackFile(path: String, bytes: ByteArray, contentType: String) = throw IOException("offline (debug)")
+    override suspend fun submitFeedback(body: String) = throw IOException("offline (debug)")
 }

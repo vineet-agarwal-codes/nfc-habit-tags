@@ -9,6 +9,8 @@ import com.habittags.app.backend.BackendFactory
 import com.habittags.app.backend.CatalogRepository
 import com.habittags.app.backend.RealtimeWatcher
 import com.habittags.app.backend.UsageReporting
+import com.habittags.app.feedback.FeedbackRepository
+import com.habittags.app.feedback.pending
 import com.habittags.core.catalog.CatalogSnapshot
 import com.habittags.core.mode.ActiveMode
 import com.habittags.core.realtime.Realtime
@@ -66,6 +68,8 @@ class HabitTagsApp : Application() {
             catalogRepository.refreshSoon()
         }
         UsageReporting.schedulePeriodic(this)
+        // Feedback written offline (or interrupted) goes out once there's a connection.
+        if (FeedbackRepository.thread(this).value?.pending().orEmpty().isNotEmpty()) FeedbackRepository.enqueue(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(object : DefaultLifecycleObserver {
             override fun onStart(owner: LifecycleOwner) {
                 scope.launch { catalogRepository.refresh() }

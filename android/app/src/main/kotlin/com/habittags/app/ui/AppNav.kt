@@ -1,5 +1,7 @@
 package com.habittags.app.ui
 
+import com.habittags.app.feedback.FeedbackScreen
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -93,8 +95,10 @@ fun AppNav(activity: MainActivity) {
                         onOpenRunning = { nav.navigate("running/$it") },
                         onEndEarly = { nav.navigate("gate/$it") },
                         onBrowse = { nav.openTab("discover") },
+                        onFeedback = { nav.navigate("feedback") },
                     )
                 }
+                composable("feedback") { FeedbackScreen(onClose = { nav.popBackStack() }) }
                 composable("discover") {
                     DiscoverScreen(onOpen = { nav.navigate("recipe/$it") }, onAdd = { nav.navigate("add/$it") })
                 }

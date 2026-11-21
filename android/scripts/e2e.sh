@@ -155,6 +155,12 @@ shot 10_dark_discover
 adb shell cmd uimode night no
 sleep 2
 
+# Feedback: sent through the background worker to the fixture backend's file.
+flow 98_feedback
+sleep 5
+adb shell run-as app.mise cat files/debug_feedback.jsonl > "$OUT/feedback.jsonl" 2>/dev/null
+grep -q "The desk tag works great" "$OUT/feedback.jsonl" || fail "feedback message not sent"
+
 # Zone lab (debug-only) with the fake Wi-Fi scanner; its uploads go to the fixture backend.
 flow 99_zone_lab
 sleep 3

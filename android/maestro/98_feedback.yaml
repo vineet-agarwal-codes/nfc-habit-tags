@@ -1,0 +1,18 @@
+appId: app.mise
+---
+# Feedback is a chat: type, send, see Mise's one reply; the message reaches the (fixture) backend.
+- launchApp:
+    stopApp: false
+- tapOn: "Home"
+- tapOn: "Feedback"
+- assertVisible: "Tell us anything.*"
+- tapOn: "Message"
+- inputText: "The desk tag works great"
+- hideKeyboard
+- tapOn: "Send"
+- assertVisible: "The desk tag works great"
+- extendedWaitUntil:
+    visible: "Thanks, got it.*"
+    timeout: 5000
+- assertVisible: "Hold to talk"
+- tapOn: "Close"
