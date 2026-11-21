@@ -1,6 +1,13 @@
 appId: app.mise
 ---
-# Ends on a screen that e2e.sh screen-captures for the store listing.
+# Leaves the gate screen. The gate focuses its text field, so the first back can be swallowed by the
+# keyboard closing (seen as a flake in CI); go back again if the gate is still showing.
 - launchApp:
     stopApp: false
+- hideKeyboard
 - back
+- runFlow:
+    when:
+      visible: "End .* early\\?"
+    commands:
+      - back
