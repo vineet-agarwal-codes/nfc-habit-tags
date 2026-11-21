@@ -75,7 +75,20 @@ object Fixtures {
         rules = listOf(Rule(actions = listOf(OpenApp("com.fit"), Timer(JsonPrimitive(60)), Log("Workout"), BlockGroups(listOf("social")), Dnd))),
     )
 
-    val recipes = listOf(desk, bed, sleep, gym).associateBy { it.id }
+    /** Bathroom: blocking starts after a delay; the tag ends it any time. */
+    val quick = Recipe(
+        id = "quick", schemaVersion = 4, version = 1, title = "Quick break", description = "", placementHint = "",
+        mode = Mode.toggle,
+        params = listOf(
+            ParamSpec("lockAfterMinutes", "duration", "Lock apps after", 5, 0, 10),
+            ParamSpec("autoOffMinutes", "duration", "Ends by itself after", 30, 15, 60),
+        ),
+        blockAfterMinutes = JsonPrimitive("{{lockAfterMinutes}}"),
+        autoOffMinutes = JsonPrimitive("{{autoOffMinutes}}"),
+        rules = listOf(Rule(actions = listOf(BlockGroups(listOf("social", "video"))))),
+    )
+
+    val recipes = listOf(desk, bed, sleep, gym, quick).associateBy { it.id }
 
     fun tag(id: String, recipe: Recipe, params: Map<String, Int> = emptyMap()) = InstalledTag(id, recipe.id, recipe.title, params)
 

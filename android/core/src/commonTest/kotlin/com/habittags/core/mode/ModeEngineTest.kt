@@ -9,6 +9,7 @@ import com.habittags.core.fixtures.Fixtures.gym
 import com.habittags.core.fixtures.Fixtures.morning
 import com.habittags.core.fixtures.Fixtures.ms
 import com.habittags.core.fixtures.Fixtures.recipes
+import com.habittags.core.fixtures.Fixtures.quick
 import com.habittags.core.fixtures.Fixtures.sleep
 import com.habittags.core.fixtures.Fixtures.tag
 import com.habittags.core.fixtures.Fixtures.zone
@@ -81,11 +82,49 @@ class ModeEngineTest {
     @Test
     fun endingOneModeKeepsSharedGroupBlocked() {
         val both = start(tag("b1", bed), active = start().state).state
-        assertEquals(setOf("insta", "fb", "yt"), ModeEngine.blockedPackages(both))
+        val now = ms("10:10")
+        assertEquals(setOf("insta", "fb", "yt"), ModeEngine.blockedPackages(both, now))
         val bedOnly = assertIs<TapResult.Ended>(tap(both, deskTag, desk, "10:10")).state
-        assertEquals(setOf("insta", "fb"), ModeEngine.blockedPackages(bedOnly))
-        assertTrue(ModeEngine.dndWanted(both))
-        assertFalse(ModeEngine.dndWanted(bedOnly))
+        assertEquals(setOf("insta", "fb"), ModeEngine.blockedPackages(bedOnly, now))
+        assertTrue(ModeEngine.dndWanted(both, now))
+        assertFalse(ModeEngine.dndWanted(bedOnly, now))
+    }
+
+    @Test
+    fun delayedBlockingStartsAfterLockDelay() {
+        // lockAfterMinutes -> (minutes after start, expected blocked packages)
+        val cases = listOf(
+            0 to listOf(0 to setOf("insta", "fb", "yt")),
+            5 to listOf(0 to emptySet(), 4 to emptySet(), 5 to setOf("insta", "fb", "yt")),
+            10 to listOf(9 to emptySet(), 10 to setOf("insta", "fb", "yt")),
+        )
+        for ((delay, checks) in cases) {
+            val t = tag("q1", quick, mapOf("lockAfterMinutes" to delay))
+            val state = assertIs<TapResult.Started>(tap(emptyMap(), t, quick, "10:00")).state
+            val mode = state.getValue("q1")
+            assertEquals(if (delay == 0) null else ms("10:00") + delay * MIN, mode.blockFrom, "delay $delay")
+            assertEquals(ms("10:00") + 30 * MIN, mode.autoOffAt)
+            for ((after, expected) in checks) {
+                val now = ms("10:00") + after * MIN
+                assertEquals(expected, ModeEngine.blockedPackages(state, now), "delay $delay at +$after")
+                assertEquals(expected.isNotEmpty(), mode.blocking(now), "delay $delay at +$after")
+            }
+        }
+    }
+
+    @Test
+    fun delayedModeEndsByTagBeforeLockAndOverlapsWithOthers() {
+        val q = tag("q1", quick)
+        val waiting = assertIs<TapResult.Started>(tap(emptyMap(), q, quick, "10:00")).state
+        assertEquals(emptyMap(), assertIs<TapResult.Ended>(tap(waiting, q, quick, "10:02")).state)
+        // Desk blocks now; the quick break only adds its apps once its delay is over.
+        val both = start(deskTag, "10:00", waiting).state
+        assertEquals(setOf("insta", "fb", "yt"), ModeEngine.blockedPackages(both, ms("10:01")))
+        assertEquals(1, ModeEngine.recordReach(both, "insta", ms("10:01")).getValue("t1").reaches)
+        assertEquals(0, ModeEngine.recordReach(both, "insta", ms("10:01")).getValue("q1").reaches)
+        assertEquals(1, ModeEngine.recordReach(both, "insta", ms("10:06")).getValue("q1").reaches)
+        // Expiry still ends it at its auto-off.
+        assertEquals(emptyMap(), ModeEngine.expire(waiting, ms("10:30"), recipes::get).first)
     }
 
     @Test
@@ -187,7 +226,7 @@ class ModeEngineTest {
         val started = start()
         assertEquals(setOf("insta", "fb", "yt"), started.state.getValue("t1").blockedPackages)
         // Editing groups later (e.g. removing "insta") must not weaken a running mode.
-        assertEquals(setOf("insta", "fb", "yt"), ModeEngine.blockedPackages(started.state))
+        assertEquals(setOf("insta", "fb", "yt"), ModeEngine.blockedPackages(started.state, ms("10:00")))
     }
 
     @Test
@@ -248,7 +287,7 @@ class ModeEngineTest {
             "maps" to mapOf("t1" to 0, "b1" to 0),
         )
         for ((pkg, expected) in cases) {
-            assertEquals(expected, ModeEngine.recordReach(both, pkg).mapValues { it.value.reaches }, pkg)
+            assertEquals(expected, ModeEngine.recordReach(both, pkg, Long.MAX_VALUE).mapValues { it.value.reaches }, pkg)
         }
     }
 

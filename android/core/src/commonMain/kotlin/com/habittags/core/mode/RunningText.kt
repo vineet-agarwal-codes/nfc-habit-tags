@@ -28,6 +28,12 @@ object RunningText {
         }
     }
 
+    /** "Apps lock in 4:12" while a mode waits out its lock delay. */
+    fun locksIn(ms: Long): String {
+        val s = (ms.coerceAtLeast(0) + 999) / 1000
+        return "Apps lock in ${s / 60}:${(s % 60).toString().padStart(2, '0')}"
+    }
+
     /** "Ends at 05:00" today, "Ends tomorrow at 05:00" the next day, else "Ends Thu at 05:00". */
     fun ends(endMs: Long, nowMs: Long, zone: TimeZone): String {
         val end = Instant.fromEpochMilliseconds(endMs).toLocalDateTime(zone)

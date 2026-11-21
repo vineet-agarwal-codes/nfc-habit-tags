@@ -35,6 +35,7 @@ val PLACE_SECTIONS = listOf(
     "bed" to "For bedtime",
     "leaving" to "For leaving home",
     "workout" to "For workouts",
+    "bathroom" to "For the bathroom",
 )
 const val NEW_SECTION = "New recipes"
 const val MORE_SECTION = "More recipes"

@@ -39,7 +39,12 @@ data class ActiveMode(
     val reaches: Int = 0,
     /** Started outside its hours as a nap (ends after the nap length). */
     val nap: Boolean = false,
-)
+    /** When blocking begins (a recipe's lock delay); null = from the start. */
+    val blockFrom: Long? = null,
+) {
+    /** Whether this mode's apps and Do Not Disturb apply at [nowMs] (its lock delay is over). */
+    fun blocking(nowMs: Long): Boolean = blockFrom == null || nowMs >= blockFrom
+}
 
 sealed interface TapResult {
     data object UnknownTag : TapResult
@@ -111,6 +116,7 @@ object ModeEngine {
         val autoOff = bindInt(recipe.autoOffMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
         val napMinutes = recipe.endPolicy?.nap?.takeIf { outsideHours }?.let { bindInt(it, recipe.params, tag.params) }
         val strict = bindInt(recipe.strictMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
+        val lockDelay = bindInt(recipe.blockAfterMinutes, recipe.params, tag.params)?.takeIf { it > 0 }
         val blockedGroups = actions.filterIsInstance<BlockGroups>().flatMap { it.groups }.toSet()
         val mode = ActiveMode(
             tagId = tag.tagId,
@@ -120,6 +126,7 @@ object ModeEngine {
                 ?: recipe.endPolicy?.let { wakeEnd(now, timeZone, it, recipe, tag.params).toEpochMilliseconds() }
                 ?: autoOff?.let { nowMs + it * MINUTE_MS },
             strictUntil = strict?.let { nowMs + it * MINUTE_MS },
+            blockFrom = lockDelay?.let { nowMs + it * MINUTE_MS },
             blockedGroups = blockedGroups,
             dnd = actions.any { it is Dnd },
             blockedPackages = blockedGroups.flatMap { groups[it].orEmpty() }.toSet(),
@@ -186,13 +193,15 @@ object ModeEngine {
 
     fun endViaGate(active: Map<String, ActiveMode>, tagId: String): Map<String, ActiveMode> = active - tagId
 
-    /** The foreground app switched to [pkg]: every running mode that blocks it counts one reach. */
-    fun recordReach(active: Map<String, ActiveMode>, pkg: String): Map<String, ActiveMode> =
-        active.mapValues { (_, m) -> if (pkg in m.blockedPackages) m.copy(reaches = m.reaches + 1) else m }
+    /** The foreground app switched to [pkg]: every running mode blocking it at [nowMs] counts one reach. */
+    fun recordReach(active: Map<String, ActiveMode>, pkg: String, nowMs: Long): Map<String, ActiveMode> =
+        active.mapValues { (_, m) -> if (m.blocking(nowMs) && pkg in m.blockedPackages) m.copy(reaches = m.reaches + 1) else m }
 
-    fun blockedPackages(active: Map<String, ActiveMode>): Set<String> = active.values.flatMap { it.blockedPackages }.toSet()
+    /** Apps blocked at [nowMs]: modes still in their lock delay don't count yet. */
+    fun blockedPackages(active: Map<String, ActiveMode>, nowMs: Long): Set<String> =
+        active.values.filter { it.blocking(nowMs) }.flatMap { it.blockedPackages }.toSet()
 
-    fun dndWanted(active: Map<String, ActiveMode>): Boolean = active.values.any { it.dnd }
+    fun dndWanted(active: Map<String, ActiveMode>, nowMs: Long): Boolean = active.values.any { it.dnd && it.blocking(nowMs) }
 }
 
 /**

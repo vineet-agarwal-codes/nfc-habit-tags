@@ -45,7 +45,7 @@ fun validate(recipe: Recipe): String? {
         ?.let { return "Param ${it.key}: default ${it.default} not within ${it.min}..${it.max}" }
     recipe.params.firstOrNull { it.type == "time" && (it.min < 0 || it.max > 1439) }
         ?.let { return "Time param ${it.key} must stay within 00:00..23:59" }
-    val bound = listOf(recipe.autoOffMinutes, recipe.strictMinutes) +
+    val bound = listOf(recipe.autoOffMinutes, recipe.strictMinutes, recipe.blockAfterMinutes) +
         (recipe.rules.flatMap { it.actions } + recipe.endActions).filterIsInstance<Timer>().map { it.minutes }
     for (value in bound) {
         runCatching { bindInt(value, recipe.params, emptyMap()) }.exceptionOrNull()?.let { return it.message }

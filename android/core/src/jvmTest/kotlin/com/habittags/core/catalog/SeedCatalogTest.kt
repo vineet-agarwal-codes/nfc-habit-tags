@@ -16,7 +16,7 @@ class SeedCatalogTest {
 
     @Test
     fun seedIsValid() {
-        assertEquals(listOf("desk-deep-work", "bed-sleep", "gym-bag", "front-door"), catalog.recipes.map { it.id })
+        assertEquals(listOf("desk-deep-work", "bed-sleep", "gym-bag", "front-door", "bathroom-break"), catalog.recipes.map { it.id })
         assertTrue(catalog.recipes.all(::isUsable))
         for (recipe in catalog.recipes) assertEquals(null, validate(recipe), recipe.id)
 
@@ -27,7 +27,7 @@ class SeedCatalogTest {
 
         for (recipe in catalog.recipes) {
             val keys = recipe.params.map { it.key }.toSet()
-            val refs = listOfNotNull(recipe.autoOffMinutes, recipe.strictMinutes)
+            val refs = listOfNotNull(recipe.autoOffMinutes, recipe.strictMinutes, recipe.blockAfterMinutes)
                 .filterIsInstance<JsonPrimitive>().filter { it.isString }
                 .map { it.content.removePrefix("{{").removeSuffix("}}") }
             assertTrue(keys.containsAll(refs), "${recipe.id} references $refs, has $keys")

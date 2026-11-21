@@ -69,6 +69,8 @@ class RunningAndEmergencyTest {
         assertEquals("Ends at 17:18", RunningText.ends(now + 60 * min, now, zone))
         assertEquals("Ends tomorrow at 05:00", RunningText.ends(at("05:00").toEpochMilliseconds() + day, now, zone))
         assertEquals("Blocking social media, video and streaming · Do Not Disturb on", RunningText.paused(listOf("Social media", "Video and streaming"), true))
+        val locks = listOf(252_000L to "Apps lock in 4:12", 59_000L to "Apps lock in 0:59", 600_000L to "Apps lock in 10:00", 0L to "Apps lock in 0:00")
+        for ((ms, text) in locks) assertEquals(text, RunningText.locksIn(ms), "$ms")
         assertEquals("Do Not Disturb on", RunningText.paused(emptyList(), true))
         assertNull(RunningText.paused(emptyList(), false))
     }

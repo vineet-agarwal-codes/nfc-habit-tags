@@ -18,8 +18,9 @@ import kotlinx.serialization.json.jsonPrimitive
 /**
  * 2: params of type "time" (minutes since midnight) and `{{param}}` sides in rule time windows.
  * 3: `endPolicy`, `tagCanEnd`, `renamedFrom` on params and `{{param±minutes}}` window sides.
+ * 4: `blockAfterMinutes`: blocking (apps and Do Not Disturb) starts that long after the mode does.
  */
-const val SUPPORTED_SCHEMA_VERSION = 3
+const val SUPPORTED_SCHEMA_VERSION = 4
 
 @Serializable
 data class Catalog(val recipes: List<Recipe>, val appGroups: List<AppGroup>)
@@ -41,6 +42,8 @@ data class ParamSpec(
     val max: Int,
     /** An earlier key for this param; installed values under it carry over. */
     val renamedFrom: String? = null,
+    /** How a duration of 0 reads ("Instantly"); default "Off". */
+    val zeroLabel: String? = null,
 )
 
 /**
@@ -76,6 +79,8 @@ data class Recipe(
     val mode: Mode,
     val params: List<ParamSpec> = emptyList(),
     val autoOffMinutes: JsonElement? = null,
+    /** Minutes after the start before apps are blocked; absent or 0 = straight away. */
+    val blockAfterMinutes: JsonElement? = null,
     val endPolicy: EndPolicy? = null,
     /** False: tapping the tag while the mode is on doesn't end it (only its end time or End early do). */
     val tagCanEnd: Boolean = true,

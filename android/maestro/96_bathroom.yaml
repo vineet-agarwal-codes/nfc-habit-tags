@@ -1,0 +1,45 @@
+appId: app.mise
+---
+# Bathroom quick break: apps lock only after the delay; it can end before or after.
+- launchApp:
+    stopApp: false
+- tapOn: "Discover"
+- scrollUntilVisible:
+    element: "Quick break"
+    centerElement: true
+- tapOn: "Quick break"
+- scrollUntilVisible:
+    element: "Set up your bathroom"
+- tapOn: "Set up your bathroom"
+- scrollUntilVisible:
+    element: "Next"
+- tapOn: "Next"
+- tapOn: "Skip, start it from the app"
+# 1 minute keeps the wait short; the default is 5.
+- openLink: "habittags-debug://param/app:bathroom-break/lockAfterMinutes/1"
+- launchApp:
+    stopApp: false
+- tapOn: "Home"
+- scrollUntilVisible:
+    element: "Bathroom"
+    centerElement: true
+- tapOn:
+    text: "Start now"
+    below: "Bathroom"
+- extendedWaitUntil:
+    visible: "Apps lock in .*"
+    timeout: 5000
+- assertVisible: "Then blocking .*"
+- takeScreenshot: bathroom_waiting
+- extendedWaitUntil:
+    visible: "Blocking social media.*"
+    timeout: 90000
+- assertNotVisible: "Apps lock in .*"
+- takeScreenshot: bathroom_locked
+- openLink: "habittags-debug://expire-soon/app:bathroom-break"
+- launchApp:
+    stopApp: false
+- tapOn: "Home"
+- extendedWaitUntil:
+    notVisible: "Quick break is on"
+    timeout: 150000

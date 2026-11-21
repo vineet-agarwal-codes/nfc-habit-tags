@@ -105,9 +105,14 @@ private fun TimeParamRow(spec: ParamSpec, value: Int, onChange: (Int) -> Unit) {
 
 @Composable
 fun ParamSlider(spec: ParamSpec, value: Int, onChange: (Int) -> Unit) {
-    val step = if (spec.max - spec.min > 120) 15 else 5
+    val range = spec.max - spec.min
+    val step = when {
+        range > 120 -> 15
+        range > 30 -> 5
+        else -> 1
+    }
     Column(Modifier.fillMaxWidth()) {
-        Text("${spec.label}: ${formatMinutes(value)}")
+        Text("${spec.label}: ${if (value == 0 && spec.zeroLabel != null) spec.zeroLabel else formatMinutes(value)}")
         Slider(
             value = value.toFloat(),
             onValueChange = { onChange(((it / step).roundToInt() * step).coerceIn(spec.min, spec.max)) },

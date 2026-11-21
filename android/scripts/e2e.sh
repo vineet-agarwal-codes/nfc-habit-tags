@@ -144,6 +144,7 @@ grep -q "BlockService" "$OUT/services_after_manual.txt" && fail "BlockService st
 flow 97_bed_hours
 flow 97_shot_home_spaces
 shot 5_home_spaces
+flow 96_bathroom
 
 adb shell cmd uimode night yes
 sleep 2

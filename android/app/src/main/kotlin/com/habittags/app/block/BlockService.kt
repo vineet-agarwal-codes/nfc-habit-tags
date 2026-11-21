@@ -54,7 +54,7 @@ class BlockService : LifecycleService() {
     private suspend fun run() {
         val app = HabitTagsApp.from(this)
         lastQueryMs = System.currentTimeMillis() - LOOKBACK_MS
-        var shown: Set<String>? = null
+        var shown: Set<Pair<String, Boolean>>? = null
         while (lifecycleScope.isActive) {
             val now = System.currentTimeMillis()
             ModeExpiry.expireNow(this)
@@ -65,13 +65,15 @@ class BlockService : LifecycleService() {
                 stopSelf()
                 return
             }
-            if (remaining.keys != shown) {
+            // Refresh the notification when modes change or a lock delay ends.
+            val shownKey = remaining.values.map { it.tagId to it.blocking(now) }.toSet()
+            if (shownKey != shown) {
                 getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(remaining))
-                shown = remaining.keys
+                shown = shownKey
             }
-            DndController.apply(this, ModeEngine.dndWanted(remaining))
+            DndController.apply(this, ModeEngine.dndWanted(remaining, now))
             val fg = currentForegroundPackage(now)
-            val blocking = remaining.values.filter { fg != null && fg != packageName && fg in it.blockedPackages }
+            val blocking = remaining.values.filter { it.blocking(now) && fg != null && fg != packageName && fg in it.blockedPackages }
             if (fg != lastLoggedFg) {
                 Log.d(TAG, "foreground=$fg blocking=${blocking.map { it.tagId }}")
                 lastLoggedFg = fg
@@ -104,7 +106,7 @@ class BlockService : LifecycleService() {
         val zone = kotlinx.datetime.TimeZone.currentSystemDefault().id
         app.update { s ->
             s.copy(
-                active = ModeEngine.recordReach(s.active, pkg),
+                active = ModeEngine.recordReach(s.active, pkg, now),
                 reachLog = (s.reachLog + modes.map { TapLogEntry(now, it.tagId, "", it.recipeId, zone, "reach") }).takeLast(MAX_REACH_LOG),
             )
         }
@@ -130,7 +132,10 @@ class BlockService : LifecycleService() {
 
     private fun notification(active: Map<String, ActiveMode>): Notification {
         val app = HabitTagsApp.from(this)
-        val text = active.values.joinToString(", ") { app.modeLabel(it) }
+        val now = System.currentTimeMillis()
+        val text = active.values.joinToString(", ") { m ->
+            m.blockFrom?.takeIf { !m.blocking(now) }?.let { "${app.modeLabel(m)} · apps lock at ${TapHandler.formatTime(it)}" } ?: app.modeLabel(m)
+        }
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_tag)

@@ -249,5 +249,59 @@
     },
     "published_at": "RECENT",
     "sort_hint": 100
+  },
+  {
+    "id": "bathroom-break",
+    "doc": {
+      "id": "bathroom-break",
+      "schemaVersion": 4,
+      "version": 1,
+      "title": "Bathroom: Quick break",
+      "description": "Tap on your way in. After a few minutes, social media, video and games are blocked so a quick break stays quick. Tap again on your way out and everything is back.",
+      "placementHint": "Stick it by the door or on the mirror.",
+      "mode": "toggle",
+      "params": [
+        {
+          "key": "lockAfterMinutes",
+          "type": "duration",
+          "label": "Lock apps after",
+          "default": 5,
+          "min": 0,
+          "max": 10,
+          "zeroLabel": "Instantly"
+        },
+        {
+          "key": "autoOffMinutes",
+          "type": "duration",
+          "label": "Ends by itself after",
+          "default": 30,
+          "min": 15,
+          "max": 60
+        }
+      ],
+      "blockAfterMinutes": "{{lockAfterMinutes}}",
+      "autoOffMinutes": "{{autoOffMinutes}}",
+      "rules": [
+        {
+          "actions": [
+            {
+              "type": "blockGroups",
+              "groups": [
+                "social",
+                "video",
+                "games"
+              ]
+            }
+          ]
+        }
+      ],
+      "space": {
+        "name": "Bathroom"
+      },
+      "place": "bathroom",
+      "tagCanEnd": true
+    },
+    "published_at": "2026-11-01T00:00:00+00:00",
+    "sort_hint": 101
   }
 ]
